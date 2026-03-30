@@ -5,6 +5,9 @@ DINO_DIRECTIONS = [North, East, South, West]
 DINO_CYCLE_SIZE = None
 DINO_CYCLE_INDEX = {}
 DINO_INITIAL_APPLE_WAIT = 64
+DINO_PHASE_GREEDY = 0
+DINO_PHASE_HAMILTON = 1
+DINO_PHASE_LAWN = 2
 
 
 def dino_tail_target():
@@ -131,15 +134,89 @@ def dino_cycle_distance(start_index, end_index):
 	return (end_index - start_index + length) % length
 
 
-def dino_shortcut_allowed(target_pos, tail, growing):
+def dino_tail_front(tail, tail_start):
+	if tail_start >= len(tail):
+		return None
+	return tail[tail_start]
+
+
+def dino_tail_length(tail, tail_start):
+	return len(tail) - tail_start
+
+
+def dino_greedy_limit():
+	size = get_world_size()
+	area = size * size
+	limit = area // 4
+	if limit < size:
+		limit = size
+	return limit
+
+
+def dino_lawn_limit():
+	size = get_world_size()
+	area = size * size
+	limit = area - size * 2
+	if limit < 0:
+		return 0
+	return limit
+
+
+def dino_phase(tail, tail_start):
+	tail_length = dino_tail_length(tail, tail_start)
+
+	if tail_length < dino_greedy_limit():
+		return DINO_PHASE_GREEDY
+
+	if tail_length >= dino_lawn_limit():
+		return DINO_PHASE_LAWN
+
+	return DINO_PHASE_HAMILTON
+
+
+def dino_is_occupied(occupied, pos):
+	return pos in occupied and occupied[pos] > 0
+
+
+def dino_mark_occupied(occupied, pos):
+	if pos in occupied:
+		occupied[pos] += 1
+	else:
+		occupied[pos] = 1
+
+
+def dino_unmark_occupied(occupied, pos):
+	if pos in occupied and occupied[pos] > 0:
+		occupied[pos] -= 1
+
+
+def dino_trim_tail(tail, tail_start):
+	if tail_start <= 0:
+		return tail, tail_start
+
+	if tail_start * 2 < len(tail):
+		return tail, tail_start
+
+	trimmed = []
+	index = tail_start
+
+	while index < len(tail):
+		trimmed.append(tail[index])
+		index += 1
+
+	return trimmed, 0
+
+
+def dino_shortcut_allowed(target_pos, tail, tail_start, growing):
 	ensure_dino_cycle()
 
-	if len(tail) <= 0:
+	tail_front = dino_tail_front(tail, tail_start)
+	if tail_front == None:
 		return True
 
 	head_index = DINO_CYCLE_INDEX[dino_head()]
 	target_index = DINO_CYCLE_INDEX[target_pos]
-	tail_index = DINO_CYCLE_INDEX[tail[0]]
+	tail_index = DINO_CYCLE_INDEX[tail_front]
 	limit = dino_cycle_distance(head_index, tail_index)
 
 	if growing:
@@ -152,28 +229,25 @@ def dino_shortcut_allowed(target_pos, tail, growing):
 	return distance > 0 and distance < limit
 
 
-def dino_occupied_tiles(tail):
-	occupied = set()
-	index = 0
-
-	while index < len(tail):
-		occupied.add(tail[index])
-		index += 1
-
-	return occupied
-
-
-def dino_can_step_on(pos, tail, occupied, growing):
-	if pos not in occupied:
+def dino_can_step_on(pos, tail, tail_start, occupied, growing):
+	if not dino_is_occupied(occupied, pos):
 		return True
 
 	if growing:
 		return False
 
-	if len(tail) <= 0:
+	tail_front = dino_tail_front(tail, tail_start)
+	if tail_front == None:
 		return False
 
-	return pos == tail[0]
+	return pos == tail_front
+
+
+def dino_distance_to_apple(pos, apple_pos):
+	if apple_pos == None:
+		return None
+
+	return abs(pos[0] - apple_pos[0]) + abs(pos[1] - apple_pos[1])
 
 
 def wait_for_initial_apple():
@@ -188,11 +262,12 @@ def wait_for_initial_apple():
 	return get_entity_type() == Entities.Apple
 
 
-def choose_dino_direction(tail, occupied, apple_pos):
+def choose_dino_direction(tail, tail_start, occupied, apple_pos):
 	ensure_dino_cycle()
 	head = dino_head()
 	growing = get_entity_type() == Entities.Apple
 	cycle_direction = dino_cycle_direction_at(head[0], head[1], get_world_size())
+	phase = dino_phase(tail, tail_start)
 	legal = []
 
 	for direction in DINO_DIRECTIONS:
@@ -201,7 +276,7 @@ def choose_dino_direction(tail, occupied, apple_pos):
 		if not dino_in_bounds(next_pos):
 			continue
 
-		if not dino_can_step_on(next_pos, tail, occupied, growing):
+		if not dino_can_step_on(next_pos, tail, tail_start, occupied, growing):
 			continue
 
 		legal.append(direction)
@@ -209,10 +284,43 @@ def choose_dino_direction(tail, occupied, apple_pos):
 	if len(legal) <= 0:
 		return None
 
+	if phase == DINO_PHASE_LAWN:
+		if cycle_direction in legal:
+			return cycle_direction
+		return legal[0]
+
 	if apple_pos == None:
 		if cycle_direction in legal:
 			return cycle_direction
 		return legal[0]
+
+	if phase == DINO_PHASE_GREEDY:
+		best_direction = None
+		best_apple_distance = None
+		best_cycle_distance = None
+		index = 0
+
+		while index < len(legal):
+			direction = legal[index]
+			next_pos = dino_neighbor(head, direction)
+			apple_distance = dino_distance_to_apple(next_pos, apple_pos)
+			cycle_distance = dino_cycle_distance(
+				DINO_CYCLE_INDEX[next_pos],
+				DINO_CYCLE_INDEX[apple_pos],
+			)
+
+			if (
+				best_direction == None
+				or apple_distance < best_apple_distance
+				or (apple_distance == best_apple_distance and cycle_distance < best_cycle_distance)
+			):
+				best_direction = direction
+				best_apple_distance = apple_distance
+				best_cycle_distance = cycle_distance
+
+			index += 1
+
+		return best_direction
 
 	best_direction = None
 	best_cycle_distance = None
@@ -222,7 +330,7 @@ def choose_dino_direction(tail, occupied, apple_pos):
 		direction = legal[index]
 		next_pos = dino_neighbor(head, direction)
 
-		if direction != cycle_direction and not dino_shortcut_allowed(next_pos, tail, growing):
+		if direction != cycle_direction and not dino_shortcut_allowed(next_pos, tail, tail_start, growing):
 			index += 1
 			continue
 
@@ -259,7 +367,8 @@ def run_dino_cycle():
 
 	start_bones = num_items(Items.Bone)
 	tail = []
-	occupied = dino_occupied_tiles(tail)
+	tail_start = 0
+	occupied = {}
 
 	# An empty board gives apples the best chance to keep spawning as the tail grows.
 	clear()
@@ -283,7 +392,7 @@ def run_dino_cycle():
 		if on_apple:
 			target_apple = measure()
 
-		direction = choose_dino_direction(tail, occupied, target_apple)
+		direction = choose_dino_direction(tail, tail_start, occupied, target_apple)
 		if direction == None:
 			break
 
@@ -293,14 +402,18 @@ def run_dino_cycle():
 
 		if on_apple:
 			tail.append(head)
+			dino_mark_occupied(occupied, head)
 			apple_pos = target_apple
 		else:
-			if len(tail) > 0:
-				tail.pop(0)
+			tail_front = dino_tail_front(tail, tail_start)
+			if tail_front != None:
+				dino_unmark_occupied(occupied, tail_front)
+				tail_start += 1
 
 			tail.append(head)
+			dino_mark_occupied(occupied, head)
 
-		occupied = dino_occupied_tiles(tail)
+		tail, tail_start = dino_trim_tail(tail, tail_start)
 
 	change_hat(Hats.Cactus_Hat)
 	return num_items(Items.Bone) - start_bones
