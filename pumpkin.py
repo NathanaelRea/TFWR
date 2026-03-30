@@ -22,14 +22,18 @@ def wait_for_pumpkin_growth():
 			return current
 
 
-def finish_repaired_pumpkin(x, y):
+def note_ready_pumpkin(x, y):
+	STATE["pumpkin_ready_count"] += 1
+	STATE["pumpkin_harvest_target"] = (x, y)
+
+
+def verify_pumpkin_tile(x, y):
 	while True:
 		current = get_entity_type()
 
 		if current == Entities.Pumpkin:
 			if can_harvest():
-				STATE["pumpkin_ready_count"] += 1
-				STATE["pumpkin_harvest_target"] = (x, y)
+				note_ready_pumpkin(x, y)
 				return
 
 			if can_boost_pumpkin():
@@ -54,12 +58,15 @@ def maintain_pumpkin():
 	x = get_pos_x()
 	y = get_pos_y()
 
+	if STATE["pumpkin_verify_mode"]:
+		verify_pumpkin_tile(x, y)
+		return
+
 	current = get_entity_type()
 
 	if current == Entities.Pumpkin:
 		if can_harvest():
-			STATE["pumpkin_ready_count"] += 1
-			STATE["pumpkin_harvest_target"] = (x, y)
+			note_ready_pumpkin(x, y)
 			return
 
 		if can_boost_pumpkin():
@@ -67,7 +74,7 @@ def maintain_pumpkin():
 		return
 
 	if current == Entities.Dead_Pumpkin:
-		finish_repaired_pumpkin(x, y)
+		verify_pumpkin_tile(x, y)
 		return
 
 	if current != None:
@@ -176,6 +183,8 @@ def pumpkin_main():
 			)
 			if not STATE["pumpkin_use_fertilizer"]:
 				STATE["pumpkin_use_fertilizer"] = True
+			elif not STATE["pumpkin_verify_mode"]:
+				STATE["pumpkin_verify_mode"] = True
 
 
 if should_auto_run():

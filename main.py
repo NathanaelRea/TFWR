@@ -137,6 +137,8 @@ def main():
 				)
 				if not STATE["pumpkin_use_fertilizer"]:
 					STATE["pumpkin_use_fertilizer"] = True
+				elif not STATE["pumpkin_verify_mode"]:
+					STATE["pumpkin_verify_mode"] = True
 			continue
 
 		quick_print(

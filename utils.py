@@ -26,6 +26,7 @@ STATE = {
 	"next_world_mode": NORMAL_WORLD,
 	"normal_sweeps_remaining": 0,
 	"pumpkin_use_fertilizer": False,
+	"pumpkin_verify_mode": False,
 	"cactus_ready_count": 0,
 }
 
@@ -156,6 +157,7 @@ def enter_pumpkin_world():
 	STATE["maze_runs_remaining"] = 0
 	STATE["normal_sweeps_remaining"] = 0
 	STATE["pumpkin_use_fertilizer"] = False
+	STATE["pumpkin_verify_mode"] = False
 
 
 def switch_to_sunflower_world(target_world):
@@ -164,6 +166,7 @@ def switch_to_sunflower_world(target_world):
 	STATE["maze_runs_remaining"] = 0
 	STATE["normal_sweeps_remaining"] = 0
 	STATE["pumpkin_use_fertilizer"] = False
+	STATE["pumpkin_verify_mode"] = False
 
 
 def enter_maze_world(target_world):
@@ -172,6 +175,7 @@ def enter_maze_world(target_world):
 	STATE["maze_runs_remaining"] = MAZE_RUNS_PER_PHASE
 	STATE["normal_sweeps_remaining"] = 0
 	STATE["pumpkin_use_fertilizer"] = False
+	STATE["pumpkin_verify_mode"] = False
 
 
 def enter_normal_world():
@@ -182,6 +186,7 @@ def enter_normal_world():
 	STATE["normal_companion_targets"] = {}
 	STATE["normal_sweeps_remaining"] = NORMAL_WORLD_SWEEPS
 	STATE["pumpkin_use_fertilizer"] = False
+	STATE["pumpkin_verify_mode"] = False
 
 
 def enter_dino_world(target_world):
@@ -190,6 +195,7 @@ def enter_dino_world(target_world):
 	STATE["maze_runs_remaining"] = 0
 	STATE["normal_sweeps_remaining"] = 0
 	STATE["pumpkin_use_fertilizer"] = False
+	STATE["pumpkin_verify_mode"] = False
 
 
 def mega_farm_enabled():
@@ -222,6 +228,8 @@ def reset_cycle_state():
 
 
 def pumpkin_phase_name():
+	if STATE["pumpkin_verify_mode"]:
+		return "verify"
 	if STATE["pumpkin_use_fertilizer"]:
 		return "boost"
 	return "seed"
