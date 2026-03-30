@@ -116,6 +116,32 @@ def maze_branch_worker():
 	return solve_maze_branch(MAZE_DRONE_DIRECTION, target_x, target_y, MAZE_DRONE_VISITED)
 
 
+def wait_for_maze_swarm():
+	while num_drones() > 1:
+		pass
+
+
+def wait_for_maze_solution(handles):
+	while len(handles) > 0:
+		index = 0
+		finished_any = False
+
+		while index < len(handles):
+			handle = handles[index]
+			if has_finished(handle):
+				finished_any = True
+				handles.pop(index)
+				if wait_for(handle):
+					return True
+			else:
+				index += 1
+
+		if finished_any:
+			continue
+
+	return False
+
+
 def solve_maze_branch(direction, target_x, target_y, visited):
 	if not is_active_maze():
 		return False
@@ -134,6 +160,9 @@ def solve_maze_branch(direction, target_x, target_y, visited):
 	visited.add((get_pos_x(), get_pos_y()))
 	if solve_maze_position(target_x, target_y, visited):
 		return True
+
+	if not is_active_maze():
+		return False
 
 	move(maze_opposite(direction))
 	return False
@@ -179,13 +208,10 @@ def solve_maze_position(target_x, target_y, visited):
 
 	solved = solve_maze_branch(directions[0], target_x, target_y, visited)
 
-	index = 0
-	while index < len(handles):
-		if wait_for(handles[index]):
-			solved = True
-		index += 1
-
 	if solved:
+		return True
+
+	if wait_for_maze_solution(handles):
 		return True
 
 	index = 0
@@ -209,6 +235,7 @@ def solve_current_maze():
 
 
 def run_maze_cycle():
+	wait_for_maze_swarm()
 	if not ensure_maze():
 		return False
 	return solve_current_maze()

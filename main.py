@@ -240,6 +240,7 @@ def finish_sunflower_phase():
 
 
 def finish_maze_phase():
+	wait_for_maze_swarm()
 	queue_recommended_world()
 
 
