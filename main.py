@@ -27,8 +27,8 @@ TRACKED_UPGRADES = [
 	Unlocks.Megafarm,
 ]
 
-POWER_LOW_WATERMARK = 10000
-POWER_HIGH_WATERMARK = 50000
+POWER_LOW_WATERMARK = 16000
+POWER_HIGH_WATERMARK = 64000
 PUMPKIN_START_CARROT_MULTIPLIER = 2
 ITEM_GOALS = {
 	Items.Hay: 1000000000,
@@ -231,8 +231,12 @@ def choose_target_world():
 	missing_items = upgrade_missing_items()
 	missing_pumpkins = missing_item_amount(missing_items, Items.Pumpkin)
 	missing_power = missing_item_amount(missing_items, Items.Power)
+	power = num_items(Items.Power)
 
-	if num_items(Items.Power) < POWER_LOW_WATERMARK:
+	if power < POWER_LOW_WATERMARK:
+		return SUNFLOWER_WORLD
+
+	if STATE["world_mode"] == SUNFLOWER_WORLD and power < POWER_HIGH_WATERMARK:
 		return SUNFLOWER_WORLD
 
 	worlds = top_tier_worlds(missing_items)
