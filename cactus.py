@@ -252,7 +252,7 @@ def sort_cactus_world():
 
 
 def cactus_main():
-	enter_normal_world()
+	enter_cactus_world(CACTUS_WORLD)
 
 	while True:
 		equip_phase_hat()

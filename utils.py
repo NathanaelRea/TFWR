@@ -5,6 +5,7 @@ MAZE_WORLD = 1
 PUMPKIN_WORLD = 2
 NORMAL_WORLD = 3
 DINO_WORLD = 4
+CACTUS_WORLD = 5
 
 NORMAL_WORLD_SWEEPS = 2
 MAZE_RUNS_PER_PHASE = 10
@@ -204,6 +205,16 @@ def enter_dino_world(target_world):
 	STATE["sunflower_verify_mode"] = False
 
 
+def enter_cactus_world(target_world):
+	STATE["world_mode"] = CACTUS_WORLD
+	STATE["next_world_mode"] = target_world
+	STATE["maze_runs_remaining"] = 0
+	STATE["normal_sweeps_remaining"] = 0
+	STATE["pumpkin_use_fertilizer"] = False
+	STATE["pumpkin_verify_mode"] = False
+	STATE["sunflower_verify_mode"] = False
+
+
 def mega_farm_enabled():
 	return num_unlocked(Unlocks.Megafarm) > 0 and max_drones() > 1
 
@@ -258,6 +269,10 @@ def equip_phase_hat():
 
 	if STATE["world_mode"] == PUMPKIN_WORLD:
 		change_hat(Hats.Pumpkin_Hat)
+		return
+
+	if STATE["world_mode"] == CACTUS_WORLD:
+		change_hat(Hats.Cactus_Hat)
 		return
 
 	if STATE["world_mode"] == DINO_WORLD:
