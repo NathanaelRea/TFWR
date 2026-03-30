@@ -2,6 +2,7 @@ from __builtins__ import *
 import utils
 utils.set_entrypoint("main")
 from utils import *
+from normal import *
 from sunflower import *
 from maze import *
 from pumpkin import *
@@ -23,18 +24,24 @@ def queue_world(target_world):
 		return
 
 	if target_world == PUMPKIN_WORLD:
-		enter_pumpkin_world()
+		if can_run_pumpkin_phase():
+			enter_pumpkin_world()
+		else:
+			enter_normal_phase()
 		return
 
-	enter_normal_world()
+	enter_normal_phase()
 
 
 def enter_target_world(target_world):
 	if target_world == PUMPKIN_WORLD:
-		enter_pumpkin_world()
+		if can_run_pumpkin_phase():
+			enter_pumpkin_world()
+		else:
+			enter_normal_phase()
 		return
 
-	enter_normal_world()
+	enter_normal_phase()
 
 
 def finish_sunflower_phase():
@@ -67,7 +74,7 @@ def run_phase_sweep():
 		run_pumpkin_sweep()
 		return
 
-	run_cactus_sweep()
+	run_normal_sweep()
 
 
 def main():
@@ -132,15 +139,14 @@ def main():
 					STATE["pumpkin_use_fertilizer"] = True
 			continue
 
-		if STATE["cactus_ready_count"] < cactus_area():
-			quick_print("cactus", "grow", STATE["cactus_ready_count"], "/", cactus_area())
-			continue
-
-		sort_cactus_world()
-		goto(0, 0)
-		harvest()
-		quick_print("cactus", "harvest", cactus_area())
-		queue_world(PUMPKIN_WORLD)
+		quick_print(
+			"normal",
+			"sweeps",
+			STATE["normal_sweeps_remaining"],
+			"companions",
+			active_normal_companion_count(),
+		)
+		finish_normal_sweep()
 
 
 main()

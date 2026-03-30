@@ -13,6 +13,8 @@ PUMPKIN_FERTILIZER_BUFFER = 300
 STATE = {
 	"entrypoint": None,
 	"maze_runs_remaining": 0,
+	"normal_companion_sources": {},
+	"normal_companion_targets": {},
 	"pumpkin_dead_repairs": 0,
 	"pumpkin_ready_count": 0,
 	"pumpkin_harvest_target": None,
@@ -31,6 +33,14 @@ STATE = {
 def pumpkin_area():
 	size = get_world_size()
 	return size * size
+
+
+def pumpkin_carrot_budget():
+	return pumpkin_area() * 2
+
+
+def can_run_pumpkin_phase():
+	return num_items(Items.Carrot) >= pumpkin_carrot_budget()
 
 
 def cactus_area():
@@ -168,6 +178,8 @@ def enter_normal_world():
 	STATE["world_mode"] = NORMAL_WORLD
 	STATE["next_world_mode"] = NORMAL_WORLD
 	STATE["maze_runs_remaining"] = 0
+	STATE["normal_companion_sources"] = {}
+	STATE["normal_companion_targets"] = {}
 	STATE["normal_sweeps_remaining"] = NORMAL_WORLD_SWEEPS
 	STATE["pumpkin_use_fertilizer"] = False
 
