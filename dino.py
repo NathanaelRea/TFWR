@@ -145,12 +145,7 @@ def dino_tail_length(tail, tail_start):
 
 
 def dino_greedy_limit():
-	size = get_world_size()
-	area = size * size
-	limit = area // 4
-	if limit < size:
-		limit = size
-	return limit
+	return get_world_size()
 
 
 def dino_lawn_limit():
