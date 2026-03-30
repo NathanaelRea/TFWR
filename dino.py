@@ -370,7 +370,6 @@ def run_dino_cycle():
 	change_hat(Hats.Dinosaur_Hat)
 
 	if not wait_for_initial_apple():
-		change_hat(Hats.Cactus_Hat)
 		return 0
 
 	apple_pos = None
@@ -410,7 +409,6 @@ def run_dino_cycle():
 
 		tail, tail_start = dino_trim_tail(tail, tail_start)
 
-	change_hat(Hats.Cactus_Hat)
 	return num_items(Items.Bone) - start_bones
 
 

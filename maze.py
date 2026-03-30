@@ -245,8 +245,6 @@ def maze_main():
 	enter_maze_world(MAZE_WORLD)
 
 	while True:
-		equip_phase_hat()
-
 		if run_maze_cycle():
 			quick_print("maze", "harvest")
 		else:

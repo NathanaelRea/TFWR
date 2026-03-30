@@ -37,7 +37,7 @@ def verify_pumpkin_tile(x, y):
 				return
 
 			if can_boost_pumpkin():
-				use_item(Items.Fertilizer)
+				try_use_fertilizer(PUMPKIN_FERTILIZER_BUFFER)
 				maintain_soil_water()
 				continue
 
@@ -72,7 +72,7 @@ def maintain_pumpkin():
 			return
 
 		if can_boost_pumpkin():
-			use_item(Items.Fertilizer)
+			try_use_fertilizer(PUMPKIN_FERTILIZER_BUFFER)
 		maintain_soil_water()
 		return
 
@@ -233,7 +233,6 @@ def pumpkin_main():
 	enter_pumpkin_world()
 
 	while True:
-		equip_phase_hat()
 		run_pumpkin_sweep()
 
 		if harvest_mega_pumpkin():

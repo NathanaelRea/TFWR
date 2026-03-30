@@ -12,6 +12,8 @@ MAZE_RUNS_PER_PHASE = 4
 PUMPKIN_FERTILIZER_BUFFER = 300
 SOIL_WATER_LOW = 0.5
 SOIL_WATER_TARGET = 0.85
+WATER_RETRY_TICKS = 1000
+FERTILIZER_RETRY_TICKS = 1000
 
 PHASE_SOIL_WATERING = {
 	NORMAL_WORLD: (SOIL_WATER_LOW, SOIL_WATER_TARGET),
@@ -37,6 +39,8 @@ STATE = {
 	"pumpkin_use_fertilizer": False,
 	"pumpkin_verify_mode": False,
 	"cactus_ready_count": 0,
+	"water_retry_tick": 0,
+	"fertilizer_retry_tick": 0,
 }
 
 
@@ -126,26 +130,47 @@ def phase_soil_watering_profile():
 	return PHASE_SOIL_WATERING[STATE["world_mode"]]
 
 
+def item_retry_ready(retry_key):
+	return get_tick_count() >= STATE[retry_key]
+
+
+def note_item_retry(retry_key, retry_ticks):
+	STATE[retry_key] = get_tick_count() + retry_ticks
+
+
+def try_use_fertilizer(min_remaining):
+	if num_items(Items.Fertilizer) <= min_remaining:
+		return False
+	if not item_retry_ready("fertilizer_retry_tick"):
+		return False
+	if use_item(Items.Fertilizer):
+		return True
+
+	note_item_retry("fertilizer_retry_tick", FERTILIZER_RETRY_TICKS)
+	return False
+
+
 def maintain_soil_water():
 	profile = phase_soil_watering_profile()
 	if profile == None:
 		return False
 	if num_unlocked(Unlocks.Watering) <= 0:
 		return False
+	if not item_retry_ready("water_retry_tick"):
+		return False
 	if num_items(Items.Water) <= 0:
 		return False
 	if get_ground_type() != Grounds.Soil:
 		return False
 
-	trigger_level, target_level = profile
+	trigger_level, _target_level = profile
 	current_water = get_water()
 	if current_water >= trigger_level:
 		return False
 
-	while current_water < target_level and num_items(Items.Water) > 0:
-		if not use_item(Items.Water):
-			return True
-		current_water = get_water()
+	if not use_item(Items.Water):
+		note_item_retry("water_retry_tick", WATER_RETRY_TICKS)
+		return False
 
 	return True
 
@@ -198,6 +223,8 @@ def enter_pumpkin_world():
 	STATE["pumpkin_use_fertilizer"] = False
 	STATE["pumpkin_verify_mode"] = False
 	STATE["sunflower_verify_mode"] = False
+	STATE["water_retry_tick"] = 0
+	STATE["fertilizer_retry_tick"] = 0
 
 
 def switch_to_sunflower_world(target_world):
@@ -208,6 +235,8 @@ def switch_to_sunflower_world(target_world):
 	STATE["pumpkin_use_fertilizer"] = False
 	STATE["pumpkin_verify_mode"] = False
 	STATE["sunflower_verify_mode"] = False
+	STATE["water_retry_tick"] = 0
+	STATE["fertilizer_retry_tick"] = 0
 
 
 def enter_maze_world(target_world):
@@ -218,6 +247,8 @@ def enter_maze_world(target_world):
 	STATE["pumpkin_use_fertilizer"] = False
 	STATE["pumpkin_verify_mode"] = False
 	STATE["sunflower_verify_mode"] = False
+	STATE["water_retry_tick"] = 0
+	STATE["fertilizer_retry_tick"] = 0
 
 
 def enter_normal_world():
@@ -229,6 +260,8 @@ def enter_normal_world():
 	STATE["pumpkin_use_fertilizer"] = False
 	STATE["pumpkin_verify_mode"] = False
 	STATE["sunflower_verify_mode"] = False
+	STATE["water_retry_tick"] = 0
+	STATE["fertilizer_retry_tick"] = 0
 
 
 def enter_dino_world(target_world):
@@ -239,6 +272,8 @@ def enter_dino_world(target_world):
 	STATE["pumpkin_use_fertilizer"] = False
 	STATE["pumpkin_verify_mode"] = False
 	STATE["sunflower_verify_mode"] = False
+	STATE["water_retry_tick"] = 0
+	STATE["fertilizer_retry_tick"] = 0
 
 
 def enter_cactus_world(target_world):
@@ -249,6 +284,8 @@ def enter_cactus_world(target_world):
 	STATE["pumpkin_use_fertilizer"] = False
 	STATE["pumpkin_verify_mode"] = False
 	STATE["sunflower_verify_mode"] = False
+	STATE["water_retry_tick"] = 0
+	STATE["fertilizer_retry_tick"] = 0
 
 
 def mega_farm_enabled():
@@ -292,27 +329,3 @@ def sunflower_phase_name():
 	if STATE["sunflower_verify_mode"]:
 		return "verify"
 	return "seed"
-
-
-def equip_phase_hat():
-	if STATE["world_mode"] == SUNFLOWER_WORLD:
-		change_hat(Hats.Sunflower_Hat)
-		return
-
-	if STATE["world_mode"] == MAZE_WORLD:
-		change_hat(Hats.Gold_Hat)
-		return
-
-	if STATE["world_mode"] == PUMPKIN_WORLD:
-		change_hat(Hats.Pumpkin_Hat)
-		return
-
-	if STATE["world_mode"] == CACTUS_WORLD:
-		change_hat(Hats.Cactus_Hat)
-		return
-
-	if STATE["world_mode"] == DINO_WORLD:
-		change_hat(Hats.Dinosaur_Hat)
-		return
-
-	change_hat(Hats.Cactus_Hat)

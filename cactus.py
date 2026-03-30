@@ -255,7 +255,6 @@ def cactus_main():
 	enter_cactus_world(CACTUS_WORLD)
 
 	while True:
-		equip_phase_hat()
 		run_cactus_sweep()
 
 		if STATE["cactus_ready_count"] < cactus_area():

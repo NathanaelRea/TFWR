@@ -236,7 +236,6 @@ def normal_main():
 	enter_normal_phase()
 
 	while True:
-		equip_phase_hat()
 		run_normal_sweep()
 		quick_print("normal", "companions", active_normal_companion_count())
 

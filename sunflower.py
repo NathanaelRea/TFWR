@@ -308,7 +308,6 @@ def sunflower_main():
 	switch_to_sunflower_world(SUNFLOWER_WORLD)
 
 	while True:
-		equip_phase_hat()
 		run_sunflower_sweep()
 
 		harvested = harvest_ordered_sunflowers()

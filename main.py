@@ -329,9 +329,6 @@ def main():
 	queue_recommended_world()
 
 	while True:
-		if STATE["world_mode"] != DINO_WORLD:
-			equip_phase_hat()
-
 		if STATE["world_mode"] == DINO_WORLD:
 			harvested = run_dino_cycle()
 			quick_print("dino", "harvest", harvested, "bones", num_items(Items.Bone))
