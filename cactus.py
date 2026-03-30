@@ -76,22 +76,38 @@ def run_cactus_sweep():
 
 def sort_cactus_row(row):
 	size = get_world_size()
-	phase = 0
+	if size < 2:
+		return
 
-	while phase < size:
-		x = phase % 2
-		goto(x, row)
+	goto(0, row)
+
+	while True:
+		swapped = False
+		x = 0
 
 		while x + 1 < size:
 			if measure() > measure(East):
 				swap(East)
-			x += 2
+				swapped = True
 
-			if x + 1 < size:
-				move(East)
-				move(East)
+			move(East)
+			x += 1
 
-		phase += 1
+		if not swapped:
+			return
+
+		swapped = False
+
+		while x > 0:
+			if measure(West) > measure():
+				swap(West)
+				swapped = True
+
+			move(West)
+			x -= 1
+
+		if not swapped:
+			return
 
 
 def sort_cactus_rows(start_row, row_step):
@@ -146,22 +162,38 @@ def run_cactus_row_sort():
 
 def sort_cactus_column(column):
 	size = get_world_size()
-	phase = 0
+	if size < 2:
+		return
 
-	while phase < size:
-		y = phase % 2
-		goto(column, y)
+	goto(column, 0)
+
+	while True:
+		swapped = False
+		y = 0
 
 		while y + 1 < size:
 			if measure() > measure(North):
 				swap(North)
-			y += 2
+				swapped = True
 
-			if y + 1 < size:
-				move(North)
-				move(North)
+			move(North)
+			y += 1
 
-		phase += 1
+		if not swapped:
+			return
+
+		swapped = False
+
+		while y > 0:
+			if measure(South) > measure():
+				swap(South)
+				swapped = True
+
+			move(South)
+			y -= 1
+
+		if not swapped:
+			return
 
 
 def sort_cactus_columns(start_column, column_step):
