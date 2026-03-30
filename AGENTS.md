@@ -48,6 +48,7 @@
 - Use `quick_print(...)` for cheap debug output and `print(...)` only when visible smoke output is actually useful.
 - Be careful with `till()`: it toggles between `Grounds.Grassland` and `Grounds.Soil`.
 - Remember movement wraps around the world edges.
+- For cactus sorting or other movement-heavy work, measure and compute the target arrangement in memory first, then execute the swap plan; avoid repeated `goto(...)`, re-measuring, or bubble-sorting on the field when a local plan will do.
 - Favor explicit loops and small helper functions over clever compact code.
 - Preserve user variables and overall strategy unless the task requires a rewrite.
 

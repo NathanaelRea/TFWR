@@ -1,0 +1,160 @@
+from __builtins__ import *
+
+SUNFLOWER_WORLD = 0
+PUMPKIN_WORLD = 1
+NORMAL_WORLD = 2
+
+NORMAL_WORLD_SWEEPS = 2
+PUMPKIN_FERTILIZER_BUFFER = 300
+
+STATE = {
+    "pumpkin_dead_repairs": 0,
+    "pumpkin_ready_count": 0,
+    "pumpkin_harvest_target": None,
+    "sunflower_ready_target": None,
+    "sunflower_max_petals": None,
+    "sunflower_count": 0,
+    "world_mode": NORMAL_WORLD,
+    "next_world_mode": NORMAL_WORLD,
+    "normal_sweeps_remaining": 0,
+    "pumpkin_use_fertilizer": False,
+    "cactus_ready_count": 0,
+    "cactus_sizes": {},
+}
+
+
+def pumpkin_area():
+    size = get_world_size()
+    return size * size
+
+
+def cactus_area():
+    size = get_world_size()
+    return size * size
+
+
+def goto(x, y):
+    size = get_world_size()
+    current_x = get_pos_x()
+    east_steps = (x - current_x + size) % size
+    west_steps = (current_x - x + size) % size
+
+    if east_steps <= west_steps:
+        while east_steps > 0:
+            move(East)
+            east_steps -= 1
+    else:
+        while west_steps > 0:
+            move(West)
+            west_steps -= 1
+
+    current_y = get_pos_y()
+    north_steps = (y - current_y + size) % size
+    south_steps = (current_y - y + size) % size
+
+    if north_steps <= south_steps:
+        while north_steps > 0:
+            move(North)
+            north_steps -= 1
+    else:
+        while south_steps > 0:
+            move(South)
+            south_steps -= 1
+
+
+def set_ground(target_ground):
+    while get_ground_type() != target_ground:
+        till()
+
+
+def prepare_ground(entity):
+    if entity == Entities.Grass or entity == Entities.Tree:
+        set_ground(Grounds.Grassland)
+        return
+
+    if (
+        entity == Entities.Pumpkin
+        or entity == Entities.Carrot
+        or entity == Entities.Cactus
+        or entity == Entities.Sunflower
+    ):
+        set_ground(Grounds.Soil)
+
+
+def plant_target(entity):
+    prepare_ground(entity)
+    if entity != Entities.Grass:
+        plant(entity)
+
+
+def sweep_world(visit_tile):
+    size = get_world_size()
+    sweep_rows(visit_tile, size)
+
+
+def sweep_rows(visit_tile, row_count):
+    size = get_world_size()
+    moving_east = True
+    goto(0, 0)
+
+    for y in range(row_count):
+        for x in range(size):
+            visit_tile()
+            if x < size - 1:
+                if moving_east:
+                    move(East)
+                else:
+                    move(West)
+        if y < row_count - 1:
+            move(North)
+            moving_east = not moving_east
+
+
+def enter_pumpkin_world():
+    STATE["world_mode"] = PUMPKIN_WORLD
+    STATE["next_world_mode"] = PUMPKIN_WORLD
+    STATE["normal_sweeps_remaining"] = 0
+    STATE["pumpkin_use_fertilizer"] = False
+
+
+def switch_to_sunflower_world(target_world):
+    STATE["world_mode"] = SUNFLOWER_WORLD
+    STATE["next_world_mode"] = target_world
+    STATE["normal_sweeps_remaining"] = 0
+    STATE["pumpkin_use_fertilizer"] = False
+
+
+def enter_normal_world():
+    STATE["world_mode"] = NORMAL_WORLD
+    STATE["next_world_mode"] = NORMAL_WORLD
+    STATE["normal_sweeps_remaining"] = NORMAL_WORLD_SWEEPS
+    STATE["pumpkin_use_fertilizer"] = False
+
+
+def reset_cycle_state():
+    STATE["cactus_ready_count"] = 0
+    STATE["cactus_sizes"] = {}
+    STATE["pumpkin_dead_repairs"] = 0
+    STATE["pumpkin_ready_count"] = 0
+    STATE["pumpkin_harvest_target"] = None
+    STATE["sunflower_ready_target"] = None
+    STATE["sunflower_max_petals"] = None
+    STATE["sunflower_count"] = 0
+
+
+def pumpkin_phase_name():
+    if STATE["pumpkin_use_fertilizer"]:
+        return "boost"
+    return "seed"
+
+
+def equip_phase_hat():
+    if STATE["world_mode"] == SUNFLOWER_WORLD:
+        change_hat(Hats.Sunflower_Hat)
+        return
+
+    if STATE["world_mode"] == PUMPKIN_WORLD:
+        change_hat(Hats.Pumpkin_Hat)
+        return
+
+    change_hat(Hats.Cactus_Hat)
