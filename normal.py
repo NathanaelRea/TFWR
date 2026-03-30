@@ -3,7 +3,10 @@ from utils import *
 
 NORMAL_DRONE_START_ROW = 0
 NORMAL_DRONE_ROW_STEP = 1
+NORMAL_ACTIVE_COMPANIONS = {}
 NORMAL_COMPANION_UPDATES = {}
+NORMAL_ROW_COMPANIONS = {}
+NORMAL_ROW_Y = -1
 
 
 def normal_key(x, y):
@@ -22,33 +25,36 @@ def default_normal_entity(x, y):
 
 def reset_normal_updates():
 	global NORMAL_COMPANION_UPDATES
+	global NORMAL_ROW_COMPANIONS
+	global NORMAL_ROW_Y
+
 	NORMAL_COMPANION_UPDATES = {}
+	NORMAL_ROW_COMPANIONS = {}
+	NORMAL_ROW_Y = -1
 
 
-def apply_normal_companion_update(source_key, update):
-	if source_key in STATE["normal_companion_sources"]:
-		existing = STATE["normal_companion_sources"][source_key]
-		if existing != None:
-			target_key = existing[0]
-			if target_key in STATE["normal_companion_targets"]:
-				target_record = STATE["normal_companion_targets"][target_key]
-				if target_record != None and target_record[0] == source_key:
-					STATE["normal_companion_targets"][target_key] = None
+def set_normal_active_companions(companions):
+	global NORMAL_ACTIVE_COMPANIONS
+	NORMAL_ACTIVE_COMPANIONS = companions
 
-	STATE["normal_companion_sources"][source_key] = None
 
-	if update == None:
+def normal_row_companions(row_parity):
+	if row_parity == 0:
+		return STATE["normal_even_row_companions"]
+	return STATE["normal_odd_row_companions"]
+
+
+def set_normal_row_companions(row_parity, companions):
+	if row_parity == 0:
+		STATE["normal_even_row_companions"] = companions
 		return
 
-	target_key = update[0]
-	companion_entity = update[1]
-	STATE["normal_companion_sources"][source_key] = [target_key, companion_entity]
-	STATE["normal_companion_targets"][target_key] = [source_key, companion_entity]
+	STATE["normal_odd_row_companions"] = companions
 
 
-def merge_normal_summary(summary):
-	for source_key in summary["normal_companion_updates"]:
-		apply_normal_companion_update(source_key, summary["normal_companion_updates"][source_key])
+def merge_normal_summary(merged_updates, summary):
+	for target_key in summary["normal_companion_updates"]:
+		merged_updates[target_key] = summary["normal_companion_updates"][target_key]
 
 
 def normal_summary():
@@ -57,35 +63,59 @@ def normal_summary():
 	}
 
 
+def prepare_normal_row():
+	global NORMAL_ROW_COMPANIONS
+	global NORMAL_ROW_Y
+
+	y = get_pos_y()
+	if NORMAL_ROW_Y == y:
+		return
+
+	NORMAL_ROW_Y = y
+	NORMAL_ROW_COMPANIONS = {}
+
+
 def normal_target_entity():
+	prepare_normal_row()
 	x = get_pos_x()
 	y = get_pos_y()
 	key = normal_key(x, y)
 
-	if key in STATE["normal_companion_targets"]:
-		target_record = STATE["normal_companion_targets"][key]
-		if target_record != None:
-			return target_record[1]
+	if key in NORMAL_ROW_COMPANIONS:
+		return NORMAL_ROW_COMPANIONS[key]
+
+	if key in NORMAL_ACTIVE_COMPANIONS:
+		return NORMAL_ACTIVE_COMPANIONS[key]
 
 	return default_normal_entity(x, y)
 
 
 def note_normal_companion():
-	source_key = normal_key(get_pos_x(), get_pos_y())
+	prepare_normal_row()
+	x = get_pos_x()
+	y = get_pos_y()
+
+	if (x + y) % 2 == 0:
+		return
+
 	current = get_entity_type()
 
 	if current == None or current == Entities.Dead_Pumpkin:
-		NORMAL_COMPANION_UPDATES[source_key] = None
 		return
 
 	companion = get_companion()
 	if companion == None:
-		NORMAL_COMPANION_UPDATES[source_key] = None
 		return
 
 	companion_entity, position = companion
 	target_x, target_y = position
-	NORMAL_COMPANION_UPDATES[source_key] = [normal_key(target_x, target_y), companion_entity]
+	target_key = normal_key(target_x, target_y)
+
+	if target_y == y:
+		NORMAL_ROW_COMPANIONS[target_key] = companion_entity
+		return
+
+	NORMAL_COMPANION_UPDATES[target_key] = companion_entity
 
 
 def maintain_normal():
@@ -106,17 +136,15 @@ def maintain_normal():
 
 
 def active_normal_companion_count():
-	count = 0
-
-	for target_key in STATE["normal_companion_targets"]:
-		if STATE["normal_companion_targets"][target_key] != None:
-			count += 1
-
-	return count
+	return (
+		len(STATE["normal_even_row_companions"])
+		+ len(STATE["normal_odd_row_companions"])
+	)
 
 
 def normal_sweep_worker():
 	reset_normal_updates()
+	set_normal_active_companions(NORMAL_ACTIVE_COMPANIONS)
 	sweep_selected_rows(maintain_normal, NORMAL_DRONE_START_ROW, NORMAL_DRONE_ROW_STEP)
 	return normal_summary()
 
@@ -136,17 +164,22 @@ def normal_row_count(start_row):
 def run_normal_row_group(start_row):
 	global NORMAL_DRONE_START_ROW
 	global NORMAL_DRONE_ROW_STEP
+	active_companions = normal_row_companions(start_row)
+	target_row_parity = (start_row + 1) % 2
 	worker_count = drone_worker_count(normal_row_count(start_row))
 
 	if worker_count <= 1:
 		reset_normal_updates()
+		set_normal_active_companions(active_companions)
 		sweep_selected_rows(maintain_normal, start_row, 2)
-		merge_normal_summary(normal_summary())
+		set_normal_row_companions(target_row_parity, normal_summary()["normal_companion_updates"])
 		return
 
 	handles = []
 	fallback_rows = []
+	merged_updates = {}
 	worker = 1
+	set_normal_active_companions(active_companions)
 
 	while worker < worker_count:
 		NORMAL_DRONE_START_ROW = start_row + worker * 2
@@ -161,20 +194,24 @@ def run_normal_row_group(start_row):
 		worker += 1
 
 	reset_normal_updates()
+	set_normal_active_companions(active_companions)
 	sweep_selected_rows(maintain_normal, start_row, worker_count * 2)
-	merge_normal_summary(normal_summary())
+	merge_normal_summary(merged_updates, normal_summary())
 
 	worker = 0
 	while worker < len(handles):
-		merge_normal_summary(wait_for(handles[worker]))
+		merge_normal_summary(merged_updates, wait_for(handles[worker]))
 		worker += 1
 
 	worker = 0
 	while worker < len(fallback_rows):
 		reset_normal_updates()
+		set_normal_active_companions(active_companions)
 		sweep_selected_rows(maintain_normal, fallback_rows[worker], worker_count * 2)
-		merge_normal_summary(normal_summary())
+		merge_normal_summary(merged_updates, normal_summary())
 		worker += 1
+
+	set_normal_row_companions(target_row_parity, merged_updates)
 
 
 def run_normal_sweep():

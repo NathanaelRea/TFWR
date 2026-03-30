@@ -22,8 +22,8 @@ PHASE_SOIL_WATERING = {
 STATE = {
     "entrypoint": None,
     "maze_runs_remaining": 0,
-    "normal_companion_sources": {},
-    "normal_companion_targets": {},
+    "normal_even_row_companions": {},
+    "normal_odd_row_companions": {},
     "pumpkin_dead_repairs": 0,
     "pumpkin_ready_count": 0,
     "pumpkin_harvest_target": None,
@@ -225,8 +225,8 @@ def enter_normal_world():
     STATE["world_mode"] = NORMAL_WORLD
     STATE["next_world_mode"] = NORMAL_WORLD
     STATE["maze_runs_remaining"] = 0
-    STATE["normal_companion_sources"] = {}
-    STATE["normal_companion_targets"] = {}
+    STATE["normal_even_row_companions"] = {}
+    STATE["normal_odd_row_companions"] = {}
     STATE["normal_sweeps_remaining"] = NORMAL_WORLD_SWEEPS
     STATE["pumpkin_use_fertilizer"] = False
     STATE["pumpkin_verify_mode"] = False
