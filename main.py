@@ -1,6 +1,7 @@
 from __builtins__ import *
 from utils import *
 from sunflower import *
+from maze import *
 from pumpkin import *
 from cactus import *
 
@@ -22,6 +23,18 @@ def queue_world(target_world):
         switch_to_sunflower_world(target_world)
         return
 
+    if needs_maze_phase():
+        enter_maze_world(target_world)
+        return
+
+    if target_world == PUMPKIN_WORLD:
+        enter_pumpkin_world()
+        return
+
+    enter_normal_world()
+
+
+def enter_target_world(target_world):
     if target_world == PUMPKIN_WORLD:
         enter_pumpkin_world()
         return
@@ -30,11 +43,15 @@ def queue_world(target_world):
 
 
 def finish_sunflower_phase():
-    if STATE["next_world_mode"] == PUMPKIN_WORLD:
-        enter_pumpkin_world()
+    if needs_maze_phase():
+        enter_maze_world(STATE["next_world_mode"])
         return
 
-    enter_normal_world()
+    enter_target_world(STATE["next_world_mode"])
+
+
+def finish_maze_phase():
+    enter_target_world(STATE["next_world_mode"])
 
 
 def finish_normal_sweep():
@@ -51,17 +68,33 @@ def main():
 
     while True:
         equip_phase_hat()
+
+        if STATE["world_mode"] == MAZE_WORLD:
+            if run_maze_cycle():
+                STATE["maze_runs_remaining"] -= 1
+                quick_print("maze", "harvest", MAZE_RUNS_PER_PHASE - STATE["maze_runs_remaining"])
+
+                if STATE["maze_runs_remaining"] > 0 and needs_maze_phase():
+                    continue
+
+                finish_maze_phase()
+            else:
+                quick_print("maze", "skip", STATE["maze_runs_remaining"])
+                finish_maze_phase()
+            continue
+
         reset_cycle_state()
         sweep_world(visit_tile)
 
         if STATE["world_mode"] == SUNFLOWER_WORLD:
-            if harvest_best_sunflower():
-                quick_print("sunflower", "harvest", STATE["sunflower_max_petals"])
+            harvested = harvest_ordered_sunflowers()
+            if harvested > 0:
+                quick_print("sunflower", "harvest", harvested, STATE["sunflower_max_petals"])
                 finish_sunflower_phase()
             else:
                 quick_print(
                     "sunflower",
-                    STATE["sunflower_count"],
+                    STATE["sunflower_ready_count"],
                     "/",
                     sunflower_area(),
                     STATE["sunflower_max_petals"],

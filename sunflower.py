@@ -25,14 +25,17 @@ def needs_sunflower_phase():
 def note_sunflower():
     petals = measure()
     STATE["sunflower_count"] += 1
-
-    if STATE["sunflower_max_petals"] == None or petals > STATE["sunflower_max_petals"]:
-        STATE["sunflower_max_petals"] = petals
-        STATE["sunflower_ready_target"] = (get_pos_x(), get_pos_y())
+    if not can_harvest():
         return
 
-    if petals == STATE["sunflower_max_petals"] and STATE["sunflower_ready_target"] == None:
-        STATE["sunflower_ready_target"] = (get_pos_x(), get_pos_y())
+    STATE["sunflower_ready_count"] += 1
+    if STATE["sunflower_max_petals"] == None or petals > STATE["sunflower_max_petals"]:
+        STATE["sunflower_max_petals"] = petals
+
+    if petals not in STATE["sunflower_targets"]:
+        STATE["sunflower_targets"][petals] = []
+
+    STATE["sunflower_targets"][petals].append((get_pos_x(), get_pos_y()))
 
 
 def maintain_sunflower():
@@ -54,19 +57,33 @@ def maintain_sunflower():
     note_sunflower()
 
 
-def harvest_best_sunflower():
+def harvest_ordered_sunflowers():
     if STATE["sunflower_count"] != sunflower_area():
-        return False
-    if STATE["sunflower_ready_target"] == None:
-        return False
+        return 0
+    if STATE["sunflower_ready_count"] != sunflower_area():
+        return 0
+    if STATE["sunflower_max_petals"] == None:
+        return 0
 
-    x, y = STATE["sunflower_ready_target"]
-    goto(x, y)
+    petals = STATE["sunflower_max_petals"]
+    harvested = 0
 
-    if get_entity_type() != Entities.Sunflower:
-        return False
-    if measure() != STATE["sunflower_max_petals"]:
-        return False
+    while petals >= 0:
+        if petals in STATE["sunflower_targets"]:
+            positions = STATE["sunflower_targets"][petals]
+            index = 0
 
-    harvest()
-    return True
+            while index < len(positions):
+                x, y = positions[index]
+                goto(x, y)
+
+                if get_entity_type() == Entities.Sunflower and can_harvest():
+                    if measure() == petals:
+                        harvest()
+                        harvested += 1
+
+                index += 1
+
+        petals -= 1
+
+    return harvested

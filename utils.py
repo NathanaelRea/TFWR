@@ -1,17 +1,21 @@
 from __builtins__ import *
 
 SUNFLOWER_WORLD = 0
-PUMPKIN_WORLD = 1
-NORMAL_WORLD = 2
+MAZE_WORLD = 1
+PUMPKIN_WORLD = 2
+NORMAL_WORLD = 3
 
 NORMAL_WORLD_SWEEPS = 2
+MAZE_RUNS_PER_PHASE = 10
 PUMPKIN_FERTILIZER_BUFFER = 300
 
 STATE = {
+    "maze_runs_remaining": 0,
     "pumpkin_dead_repairs": 0,
     "pumpkin_ready_count": 0,
     "pumpkin_harvest_target": None,
-    "sunflower_ready_target": None,
+    "sunflower_ready_count": 0,
+    "sunflower_targets": {},
     "sunflower_max_petals": None,
     "sunflower_count": 0,
     "world_mode": NORMAL_WORLD,
@@ -113,6 +117,7 @@ def sweep_rows(visit_tile, row_count):
 def enter_pumpkin_world():
     STATE["world_mode"] = PUMPKIN_WORLD
     STATE["next_world_mode"] = PUMPKIN_WORLD
+    STATE["maze_runs_remaining"] = 0
     STATE["normal_sweeps_remaining"] = 0
     STATE["pumpkin_use_fertilizer"] = False
 
@@ -120,6 +125,15 @@ def enter_pumpkin_world():
 def switch_to_sunflower_world(target_world):
     STATE["world_mode"] = SUNFLOWER_WORLD
     STATE["next_world_mode"] = target_world
+    STATE["maze_runs_remaining"] = 0
+    STATE["normal_sweeps_remaining"] = 0
+    STATE["pumpkin_use_fertilizer"] = False
+
+
+def enter_maze_world(target_world):
+    STATE["world_mode"] = MAZE_WORLD
+    STATE["next_world_mode"] = target_world
+    STATE["maze_runs_remaining"] = MAZE_RUNS_PER_PHASE
     STATE["normal_sweeps_remaining"] = 0
     STATE["pumpkin_use_fertilizer"] = False
 
@@ -127,6 +141,7 @@ def switch_to_sunflower_world(target_world):
 def enter_normal_world():
     STATE["world_mode"] = NORMAL_WORLD
     STATE["next_world_mode"] = NORMAL_WORLD
+    STATE["maze_runs_remaining"] = 0
     STATE["normal_sweeps_remaining"] = NORMAL_WORLD_SWEEPS
     STATE["pumpkin_use_fertilizer"] = False
 
@@ -137,7 +152,8 @@ def reset_cycle_state():
     STATE["pumpkin_dead_repairs"] = 0
     STATE["pumpkin_ready_count"] = 0
     STATE["pumpkin_harvest_target"] = None
-    STATE["sunflower_ready_target"] = None
+    STATE["sunflower_ready_count"] = 0
+    STATE["sunflower_targets"] = {}
     STATE["sunflower_max_petals"] = None
     STATE["sunflower_count"] = 0
 
@@ -151,6 +167,10 @@ def pumpkin_phase_name():
 def equip_phase_hat():
     if STATE["world_mode"] == SUNFLOWER_WORLD:
         change_hat(Hats.Sunflower_Hat)
+        return
+
+    if STATE["world_mode"] == MAZE_WORLD:
+        change_hat(Hats.Gold_Hat)
         return
 
     if STATE["world_mode"] == PUMPKIN_WORLD:
