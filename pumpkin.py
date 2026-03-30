@@ -122,3 +122,30 @@ def harvest_mega_pumpkin():
 
     harvest()
     return True
+
+
+def pumpkin_main():
+    enter_pumpkin_world()
+
+    while True:
+        equip_phase_hat()
+        run_pumpkin_sweep()
+
+        if harvest_mega_pumpkin():
+            quick_print("pumpkin", "harvest", pumpkin_area())
+        else:
+            quick_print(
+                "pumpkin",
+                pumpkin_phase_name(),
+                STATE["pumpkin_ready_count"],
+                "/",
+                pumpkin_area(),
+                "repairs",
+                STATE["pumpkin_dead_repairs"],
+            )
+            if not STATE["pumpkin_use_fertilizer"]:
+                STATE["pumpkin_use_fertilizer"] = True
+
+
+if should_auto_run():
+    pumpkin_main()

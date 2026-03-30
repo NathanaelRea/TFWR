@@ -1,4 +1,6 @@
 from __builtins__ import *
+import utils
+utils.set_entrypoint("main")
 from utils import *
 from sunflower import *
 from maze import *

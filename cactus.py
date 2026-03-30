@@ -264,3 +264,28 @@ def sort_cactus_world():
         attempts += 1
 
     return False
+
+
+def cactus_main():
+    enter_normal_world()
+
+    while True:
+        equip_phase_hat()
+        run_cactus_sweep()
+
+        if STATE["cactus_ready_count"] < cactus_area():
+            quick_print("cactus", "grow", STATE["cactus_ready_count"], "/", cactus_area())
+            continue
+
+        cactus_sorted = sort_cactus_world()
+        goto(0, 0)
+
+        if cactus_sorted and get_entity_type() == Entities.Cactus and can_harvest():
+            harvest()
+            quick_print("cactus", "harvest", cactus_area())
+        else:
+            quick_print("cactus", "sort", STATE["cactus_ready_count"], "/", cactus_area())
+
+
+if should_auto_run():
+    cactus_main()

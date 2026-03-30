@@ -10,6 +10,7 @@ MAZE_RUNS_PER_PHASE = 10
 PUMPKIN_FERTILIZER_BUFFER = 300
 
 STATE = {
+    "entrypoint": None,
     "maze_runs_remaining": 0,
     "pumpkin_dead_repairs": 0,
     "pumpkin_ready_count": 0,
@@ -34,6 +35,14 @@ def pumpkin_area():
 def cactus_area():
     size = get_world_size()
     return size * size
+
+
+def set_entrypoint(name):
+    STATE["entrypoint"] = name
+
+
+def should_auto_run():
+    return STATE["entrypoint"] == None
 
 
 def goto(x, y):

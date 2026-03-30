@@ -212,3 +212,19 @@ def run_maze_cycle():
     if not ensure_maze():
         return False
     return solve_current_maze()
+
+
+def maze_main():
+    enter_maze_world(MAZE_WORLD)
+
+    while True:
+        equip_phase_hat()
+
+        if run_maze_cycle():
+            quick_print("maze", "harvest")
+        else:
+            quick_print("maze", "skip")
+
+
+if should_auto_run():
+    maze_main()

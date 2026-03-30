@@ -233,3 +233,27 @@ def harvest_ordered_sunflowers():
         petals -= 1
 
     return harvested
+
+
+def sunflower_main():
+    switch_to_sunflower_world(SUNFLOWER_WORLD)
+
+    while True:
+        equip_phase_hat()
+        run_sunflower_sweep()
+
+        harvested = harvest_ordered_sunflowers()
+        if harvested > 0:
+            quick_print("sunflower", "harvest", harvested, STATE["sunflower_max_petals"])
+        else:
+            quick_print(
+                "sunflower",
+                STATE["sunflower_ready_count"],
+                "/",
+                sunflower_area(),
+                STATE["sunflower_max_petals"],
+            )
+
+
+if should_auto_run():
+    sunflower_main()
