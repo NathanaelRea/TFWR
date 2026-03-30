@@ -101,6 +101,7 @@ def maintain_normal():
 			harvest()
 		plant_target(desired)
 
+	maintain_soil_water()
 	note_normal_companion()
 
 

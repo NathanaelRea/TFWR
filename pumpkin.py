@@ -38,8 +38,10 @@ def verify_pumpkin_tile(x, y):
 
 			if can_boost_pumpkin():
 				use_item(Items.Fertilizer)
+				maintain_soil_water()
 				continue
 
+			maintain_soil_water()
 			wait_for_pumpkin_growth()
 			continue
 
@@ -71,6 +73,7 @@ def maintain_pumpkin():
 
 		if can_boost_pumpkin():
 			use_item(Items.Fertilizer)
+		maintain_soil_water()
 		return
 
 	if current == Entities.Dead_Pumpkin:
@@ -81,6 +84,7 @@ def maintain_pumpkin():
 		harvest()
 
 	plant_target(Entities.Pumpkin)
+	maintain_soil_water()
 
 
 def pumpkin_summary():

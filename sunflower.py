@@ -75,6 +75,7 @@ def wait_for_sunflower_growth():
 def maintain_sunflower():
 	if not prepare_sunflower_tile():
 		return
+	maintain_soil_water()
 	note_sunflower(False)
 
 
@@ -136,6 +137,7 @@ def run_sunflower_verify_rows(start_row, row_step):
 
 		while x < size:
 			if prepare_sunflower_tile():
+				maintain_soil_water()
 				is_last_tile = y == last_row and x == size - 1
 				if is_last_tile:
 					wait_for_sunflower_growth()
