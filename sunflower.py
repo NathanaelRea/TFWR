@@ -29,10 +29,10 @@ def needs_sunflower_phase():
 	return num_items(Items.Power) < power_threshold()
 
 
-def note_sunflower():
+def note_sunflower(assume_ready):
 	petals = measure()
 	STATE["sunflower_count"] += 1
-	if not can_harvest():
+	if not assume_ready and not can_harvest():
 		return
 
 	STATE["sunflower_ready_count"] += 1
@@ -45,23 +45,37 @@ def note_sunflower():
 	STATE["sunflower_targets"][petals].append((get_pos_x(), get_pos_y()))
 
 
-def maintain_sunflower():
+def prepare_sunflower_tile():
 	current = get_entity_type()
 	x = get_pos_x()
 	y = get_pos_y()
 
 	if not is_sunflower_tile(x, y):
-		return
+		return False
 
 	if current == Entities.Sunflower:
-		note_sunflower()
-		return
+		return True
 
 	if current != None and current != Entities.Dead_Pumpkin:
 		harvest()
 
 	plant_target(Entities.Sunflower)
-	note_sunflower()
+	return True
+
+
+def wait_for_sunflower_growth():
+	while True:
+		if get_entity_type() != Entities.Sunflower:
+			prepare_sunflower_tile()
+			continue
+		if can_harvest():
+			return
+
+
+def maintain_sunflower():
+	if not prepare_sunflower_tile():
+		return
+	note_sunflower(False)
 
 
 def sunflower_summary():
@@ -99,6 +113,47 @@ def sunflower_sweep_worker():
 	return sunflower_summary()
 
 
+def sunflower_last_row(start_row, row_step):
+	size = sunflower_rows()
+	row = start_row
+	last_row = start_row
+
+	while row < size:
+		last_row = row
+		row += row_step
+
+	return last_row
+
+
+def run_sunflower_verify_rows(start_row, row_step):
+	size = get_world_size()
+	last_row = sunflower_last_row(start_row, row_step)
+	y = start_row
+
+	while y < size:
+		goto(0, y)
+		x = 0
+
+		while x < size:
+			if prepare_sunflower_tile():
+				is_last_tile = y == last_row and x == size - 1
+				if is_last_tile:
+					wait_for_sunflower_growth()
+				note_sunflower(True)
+
+			if x < size - 1:
+				move(East)
+			x += 1
+
+		y += row_step
+
+
+def sunflower_verify_worker():
+	reset_cycle_state()
+	run_sunflower_verify_rows(SUNFLOWER_DRONE_START_ROW, SUNFLOWER_DRONE_ROW_STEP)
+	return sunflower_summary()
+
+
 def run_sunflower_sweep():
 	global SUNFLOWER_DRONE_START_ROW
 	global SUNFLOWER_DRONE_ROW_STEP
@@ -106,7 +161,10 @@ def run_sunflower_sweep():
 	reset_cycle_state()
 
 	if worker_count <= 1:
-		sweep_world(maintain_sunflower)
+		if STATE["sunflower_verify_mode"]:
+			run_sunflower_verify_rows(0, 1)
+		else:
+			sweep_selected_rows(maintain_sunflower, 0, 1)
 		return
 
 	handles = []
@@ -117,7 +175,10 @@ def run_sunflower_sweep():
 		SUNFLOWER_DRONE_START_ROW = worker
 		SUNFLOWER_DRONE_ROW_STEP = worker_count
 
-		handle = spawn_drone(sunflower_sweep_worker)
+		if STATE["sunflower_verify_mode"]:
+			handle = spawn_drone(sunflower_verify_worker)
+		else:
+			handle = spawn_drone(sunflower_sweep_worker)
 		if handle == None:
 			fallback_rows.append(worker)
 		else:
@@ -125,7 +186,10 @@ def run_sunflower_sweep():
 
 		worker += 1
 
-	sweep_selected_rows(maintain_sunflower, 0, worker_count)
+	if STATE["sunflower_verify_mode"]:
+		run_sunflower_verify_rows(0, worker_count)
+	else:
+		sweep_selected_rows(maintain_sunflower, 0, worker_count)
 
 	worker = 0
 	while worker < len(handles):
@@ -134,7 +198,10 @@ def run_sunflower_sweep():
 
 	worker = 0
 	while worker < len(fallback_rows):
-		sweep_selected_rows(maintain_sunflower, fallback_rows[worker], worker_count)
+		if STATE["sunflower_verify_mode"]:
+			run_sunflower_verify_rows(fallback_rows[worker], worker_count)
+		else:
+			sweep_selected_rows(maintain_sunflower, fallback_rows[worker], worker_count)
 		worker += 1
 
 
@@ -248,11 +315,14 @@ def sunflower_main():
 		else:
 			quick_print(
 				"sunflower",
+				sunflower_phase_name(),
 				STATE["sunflower_ready_count"],
 				"/",
 				sunflower_area(),
 				STATE["sunflower_max_petals"],
 			)
+			if not STATE["sunflower_verify_mode"]:
+				STATE["sunflower_verify_mode"] = True
 
 
 if should_auto_run():

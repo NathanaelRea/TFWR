@@ -114,11 +114,14 @@ def main():
 			else:
 				quick_print(
 					"sunflower",
+					sunflower_phase_name(),
 					STATE["sunflower_ready_count"],
 					"/",
 					sunflower_area(),
 					STATE["sunflower_max_petals"],
 				)
+				if not STATE["sunflower_verify_mode"]:
+					STATE["sunflower_verify_mode"] = True
 			continue
 
 		if STATE["world_mode"] == PUMPKIN_WORLD:

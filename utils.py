@@ -22,6 +22,7 @@ STATE = {
 	"sunflower_targets": {},
 	"sunflower_max_petals": None,
 	"sunflower_count": 0,
+	"sunflower_verify_mode": False,
 	"world_mode": NORMAL_WORLD,
 	"next_world_mode": NORMAL_WORLD,
 	"normal_sweeps_remaining": 0,
@@ -158,6 +159,7 @@ def enter_pumpkin_world():
 	STATE["normal_sweeps_remaining"] = 0
 	STATE["pumpkin_use_fertilizer"] = False
 	STATE["pumpkin_verify_mode"] = False
+	STATE["sunflower_verify_mode"] = False
 
 
 def switch_to_sunflower_world(target_world):
@@ -167,6 +169,7 @@ def switch_to_sunflower_world(target_world):
 	STATE["normal_sweeps_remaining"] = 0
 	STATE["pumpkin_use_fertilizer"] = False
 	STATE["pumpkin_verify_mode"] = False
+	STATE["sunflower_verify_mode"] = False
 
 
 def enter_maze_world(target_world):
@@ -176,6 +179,7 @@ def enter_maze_world(target_world):
 	STATE["normal_sweeps_remaining"] = 0
 	STATE["pumpkin_use_fertilizer"] = False
 	STATE["pumpkin_verify_mode"] = False
+	STATE["sunflower_verify_mode"] = False
 
 
 def enter_normal_world():
@@ -187,6 +191,7 @@ def enter_normal_world():
 	STATE["normal_sweeps_remaining"] = NORMAL_WORLD_SWEEPS
 	STATE["pumpkin_use_fertilizer"] = False
 	STATE["pumpkin_verify_mode"] = False
+	STATE["sunflower_verify_mode"] = False
 
 
 def enter_dino_world(target_world):
@@ -196,6 +201,7 @@ def enter_dino_world(target_world):
 	STATE["normal_sweeps_remaining"] = 0
 	STATE["pumpkin_use_fertilizer"] = False
 	STATE["pumpkin_verify_mode"] = False
+	STATE["sunflower_verify_mode"] = False
 
 
 def mega_farm_enabled():
@@ -232,6 +238,12 @@ def pumpkin_phase_name():
 		return "verify"
 	if STATE["pumpkin_use_fertilizer"]:
 		return "boost"
+	return "seed"
+
+
+def sunflower_phase_name():
+	if STATE["sunflower_verify_mode"]:
+		return "verify"
 	return "seed"
 
 
