@@ -214,56 +214,9 @@ def run_cactus_column_sort():
         worker += 1
 
 
-def cactus_world_sorted():
-    size = get_world_size()
-    previous_row = []
-    y = 0
-
-    while y < size:
-        goto(0, y)
-        current_row = []
-        previous_value = None
-        x = 0
-
-        while x < size:
-            if get_entity_type() != Entities.Cactus or not can_harvest():
-                return False
-
-            value = measure()
-
-            if previous_value != None and previous_value > value:
-                return False
-
-            if y > 0 and previous_row[x] > value:
-                return False
-
-            current_row.append(value)
-            previous_value = value
-
-            if x < size - 1:
-                move(East)
-
-            x += 1
-
-        previous_row = current_row
-        y += 1
-
-    return True
-
-
 def sort_cactus_world():
-    attempts = 0
-
-    while attempts < 2:
-        run_cactus_row_sort()
-        run_cactus_column_sort()
-
-        if cactus_world_sorted():
-            return True
-
-        attempts += 1
-
-    return False
+    run_cactus_row_sort()
+    run_cactus_column_sort()
 
 
 def cactus_main():
@@ -277,14 +230,10 @@ def cactus_main():
             quick_print("cactus", "grow", STATE["cactus_ready_count"], "/", cactus_area())
             continue
 
-        cactus_sorted = sort_cactus_world()
+        sort_cactus_world()
         goto(0, 0)
-
-        if cactus_sorted and get_entity_type() == Entities.Cactus and can_harvest():
-            harvest()
-            quick_print("cactus", "harvest", cactus_area())
-        else:
-            quick_print("cactus", "sort", STATE["cactus_ready_count"], "/", cactus_area())
+        harvest()
+        quick_print("cactus", "harvest", cactus_area())
 
 
 if should_auto_run():

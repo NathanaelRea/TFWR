@@ -124,15 +124,11 @@ def main():
             quick_print("cactus", "grow", STATE["cactus_ready_count"], "/", cactus_area())
             continue
 
-        cactus_sorted = sort_cactus_world()
+        sort_cactus_world()
         goto(0, 0)
-
-        if cactus_sorted and get_entity_type() == Entities.Cactus and can_harvest():
-            harvest()
-            quick_print("cactus", "harvest", cactus_area())
-            queue_world(PUMPKIN_WORLD)
-        else:
-            quick_print("cactus", "sort", STATE["cactus_ready_count"], "/", cactus_area())
+        harvest()
+        quick_print("cactus", "harvest", cactus_area())
+        queue_world(PUMPKIN_WORLD)
 
 
 main()
