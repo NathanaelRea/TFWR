@@ -30,6 +30,14 @@ TRACKED_UPGRADES = [
 POWER_LOW_WATERMARK = 10000
 POWER_HIGH_WATERMARK = 20000
 PUMPKIN_START_CARROT_MULTIPLIER = 2
+ITEM_GOALS = {
+	Items.Hay: 1000000000,
+	Items.Wood: 10000000000,
+	Items.Carrot: 1000000000,
+	Items.Cactus: 1000000000,
+	Items.Bone: 100000000,
+	Items.Gold: 100000000,
+}
 
 
 def phase_name(world_mode):
@@ -79,6 +87,18 @@ def add_missing_costs(missing_items, cost):
 		missing_items[item] += shortfall
 
 
+def add_missing_goal_items(missing_items):
+	for item in ITEM_GOALS:
+		shortfall = ITEM_GOALS[item] - num_items(item)
+		if shortfall <= 0:
+			continue
+
+		if item not in missing_items:
+			missing_items[item] = 0
+
+		missing_items[item] += shortfall
+
+
 def upgrade_missing_items():
 	missing_items = {}
 
@@ -87,6 +107,7 @@ def upgrade_missing_items():
 		if cost != None:
 			add_missing_costs(missing_items, cost)
 
+	add_missing_goal_items(missing_items)
 	return missing_items
 
 
@@ -304,6 +325,7 @@ def main():
 
 		if STATE["world_mode"] == PUMPKIN_WORLD:
 			if harvest_mega_pumpkin():
+				restart_pumpkin_cycle()
 				quick_print("pumpkin", "harvest", pumpkin_area())
 				queue_recommended_world()
 			else:

@@ -109,6 +109,62 @@ def pumpkin_sweep_worker():
 	return pumpkin_summary()
 
 
+def replant_pumpkin_tile():
+	current = get_entity_type()
+
+	if current == Entities.Pumpkin:
+		maintain_soil_water()
+		return
+
+	if current != None and current != Entities.Dead_Pumpkin:
+		harvest()
+
+	plant_target(Entities.Pumpkin)
+	maintain_soil_water()
+
+
+def pumpkin_replant_worker():
+	sweep_selected_rows(replant_pumpkin_tile, PUMPKIN_DRONE_START_ROW, PUMPKIN_DRONE_ROW_STEP)
+
+
+def run_pumpkin_replant_sweep():
+	global PUMPKIN_DRONE_START_ROW
+	global PUMPKIN_DRONE_ROW_STEP
+	worker_count = drone_worker_count(get_world_size())
+
+	if worker_count <= 1:
+		sweep_world(replant_pumpkin_tile)
+		return
+
+	handles = []
+	fallback_rows = []
+	worker = 1
+
+	while worker < worker_count:
+		PUMPKIN_DRONE_START_ROW = worker
+		PUMPKIN_DRONE_ROW_STEP = worker_count
+
+		handle = spawn_drone(pumpkin_replant_worker)
+		if handle == None:
+			fallback_rows.append(worker)
+		else:
+			handles.append(handle)
+
+		worker += 1
+
+	sweep_selected_rows(replant_pumpkin_tile, 0, worker_count)
+
+	worker = 0
+	while worker < len(handles):
+		wait_for(handles[worker])
+		worker += 1
+
+	worker = 0
+	while worker < len(fallback_rows):
+		sweep_selected_rows(replant_pumpkin_tile, fallback_rows[worker], worker_count)
+		worker += 1
+
+
 def run_pumpkin_sweep():
 	global PUMPKIN_DRONE_START_ROW
 	global PUMPKIN_DRONE_ROW_STEP
@@ -166,6 +222,13 @@ def harvest_mega_pumpkin():
 	return True
 
 
+def restart_pumpkin_cycle():
+	run_pumpkin_replant_sweep()
+	reset_cycle_state()
+	STATE["pumpkin_use_fertilizer"] = False
+	STATE["pumpkin_verify_mode"] = False
+
+
 def pumpkin_main():
 	enter_pumpkin_world()
 
@@ -174,6 +237,7 @@ def pumpkin_main():
 		run_pumpkin_sweep()
 
 		if harvest_mega_pumpkin():
+			restart_pumpkin_cycle()
 			quick_print("pumpkin", "harvest", pumpkin_area())
 		else:
 			quick_print(
