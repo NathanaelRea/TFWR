@@ -23,7 +23,6 @@ STATE = {
     "normal_sweeps_remaining": 0,
     "pumpkin_use_fertilizer": False,
     "cactus_ready_count": 0,
-    "cactus_sizes": {},
 }
 
 
@@ -183,7 +182,6 @@ def drone_worker_count(task_count):
 
 def reset_cycle_state():
     STATE["cactus_ready_count"] = 0
-    STATE["cactus_sizes"] = {}
     STATE["pumpkin_dead_repairs"] = 0
     STATE["pumpkin_ready_count"] = 0
     STATE["pumpkin_harvest_target"] = None

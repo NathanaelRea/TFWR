@@ -1,8 +1,9 @@
 from __builtins__ import *
 from utils import *
 
-CACTUS_DRONE_START_ROW = 0
-CACTUS_DRONE_ROW_STEP = 1
+CACTUS_SWEEP_ROW_STEP = 1
+CACTUS_ROW_SORT_STEP = 1
+CACTUS_COLUMN_SORT_STEP = 1
 
 
 def maintain_cactus():
@@ -11,7 +12,6 @@ def maintain_cactus():
     if current == Entities.Cactus:
         if can_harvest():
             STATE["cactus_ready_count"] += 1
-            STATE["cactus_sizes"][(get_pos_x(), get_pos_y())] = measure()
         return
 
     if current != None:
@@ -23,26 +23,21 @@ def maintain_cactus():
 def cactus_summary():
     return {
         "cactus_ready_count": STATE["cactus_ready_count"],
-        "cactus_sizes": STATE["cactus_sizes"],
     }
 
 
 def merge_cactus_summary(summary):
     STATE["cactus_ready_count"] += summary["cactus_ready_count"]
 
-    for loc in summary["cactus_sizes"]:
-        STATE["cactus_sizes"][loc] = summary["cactus_sizes"][loc]
-
 
 def cactus_sweep_worker():
     reset_cycle_state()
-    sweep_selected_rows(maintain_cactus, CACTUS_DRONE_START_ROW, CACTUS_DRONE_ROW_STEP)
+    sweep_selected_rows(maintain_cactus, get_pos_y(), CACTUS_SWEEP_ROW_STEP)
     return cactus_summary()
 
 
 def run_cactus_sweep():
-    global CACTUS_DRONE_START_ROW
-    global CACTUS_DRONE_ROW_STEP
+    global CACTUS_SWEEP_ROW_STEP
     worker_count = drone_worker_count(get_world_size())
     reset_cycle_state()
 
@@ -54,10 +49,10 @@ def run_cactus_sweep():
     fallback_rows = []
     worker = 1
 
-    while worker < worker_count:
-        CACTUS_DRONE_START_ROW = worker
-        CACTUS_DRONE_ROW_STEP = worker_count
+    CACTUS_SWEEP_ROW_STEP = worker_count
 
+    while worker < worker_count:
+        goto(0, worker)
         handle = spawn_drone(cactus_sweep_worker)
         if handle == None:
             fallback_rows.append(worker)
@@ -79,167 +74,193 @@ def run_cactus_sweep():
         worker += 1
 
 
-def empty_cactus_grid():
+def sort_cactus_row(row):
     size = get_world_size()
-    grid = []
-    y = 0
+    phase = 0
 
-    while y < size:
-        row = []
-        x = 0
+    while phase < size:
+        x = phase % 2
+        goto(x, row)
 
-        while x < size:
-            row.append(None)
-            x += 1
+        while x + 1 < size:
+            if measure() > measure(East):
+                swap(East)
+            x += 2
 
-        grid.append(row)
-        y += 1
+            if x + 1 < size:
+                move(East)
+                move(East)
 
-    return grid
-
-
-def current_cactus_grid():
-    grid = empty_cactus_grid()
-
-    for loc in STATE["cactus_sizes"]:
-        x, y = loc
-        grid[y][x] = STATE["cactus_sizes"][loc]
-
-    return grid
+        phase += 1
 
 
-def target_cactus_grid(grid):
-    counts = []
-    value = 0
-
-    while value < 10:
-        counts.append(0)
-        value += 1
-
+def sort_cactus_rows(start_row, row_step):
     size = get_world_size()
-    y = 0
+    row = start_row
 
-    while y < size:
-        x = 0
-
-        while x < size:
-            counts[grid[y][x]] += 1
-            x += 1
-
-        y += 1
-
-    target = empty_cactus_grid()
-    next_size = 0
-    y = 0
-
-    while y < size:
-        x = 0
-
-        while x < size:
-            while counts[next_size] <= 0:
-                next_size += 1
-
-            target[y][x] = next_size
-            counts[next_size] -= 1
-            x += 1
-
-        y += 1
-
-    return target
+    while row < size:
+        sort_cactus_row(row)
+        row += row_step
 
 
-def find_cactus_source(grid, target_x, target_y, target_size):
-    size = get_world_size()
-    best_x = None
-    best_y = None
-    best_distance = None
-    y = target_y
-
-    while y < size:
-        x = 0
-        if y == target_y:
-            x = target_x
-
-        while x < size:
-            if grid[y][x] == target_size:
-                distance = abs(x - target_x) + abs(y - target_y)
-                if best_distance == None or distance < best_distance:
-                    best_x = x
-                    best_y = y
-                    best_distance = distance
-            x += 1
-
-        y += 1
-
-    return best_x, best_y
+def cactus_row_sort_worker():
+    sort_cactus_rows(get_pos_y(), CACTUS_ROW_SORT_STEP)
 
 
-def swap_cactus_grid(grid, x, y, other_x, other_y):
-    value = grid[y][x]
-    grid[y][x] = grid[other_y][other_x]
-    grid[other_y][other_x] = value
+def run_cactus_row_sort():
+    global CACTUS_ROW_SORT_STEP
+    worker_count = drone_worker_count(get_world_size())
 
-
-def move_cactus_horizontal(grid, x, y, target_x):
-    while x < target_x:
-        swap(East)
-        swap_cactus_grid(grid, x, y, x + 1, y)
-        move(East)
-        x += 1
-
-    while x > target_x:
-        swap(West)
-        swap_cactus_grid(grid, x, y, x - 1, y)
-        move(West)
-        x -= 1
-
-    return x
-
-
-def move_cactus_vertical(grid, x, y, target_y):
-    while y < target_y:
-        swap(North)
-        swap_cactus_grid(grid, x, y, x, y + 1)
-        move(North)
-        y += 1
-
-    while y > target_y:
-        swap(South)
-        swap_cactus_grid(grid, x, y, x, y - 1)
-        move(South)
-        y -= 1
-
-    return y
-
-
-def place_cactus(grid, target_x, target_y, source_x, source_y):
-    x = source_x
-    y = source_y
-
-    goto(x, y)
-
-    if y > target_y:
-        x = move_cactus_horizontal(grid, x, y, target_x)
-        move_cactus_vertical(grid, x, y, target_y)
+    if worker_count <= 1:
+        sort_cactus_rows(0, 1)
         return
 
-    x = move_cactus_horizontal(grid, x, y, target_x)
-    move_cactus_vertical(grid, x, y, target_y)
+    handles = []
+    fallback_rows = []
+    worker = 1
+
+    CACTUS_ROW_SORT_STEP = worker_count
+
+    while worker < worker_count:
+        goto(0, worker)
+        handle = spawn_drone(cactus_row_sort_worker)
+        if handle == None:
+            fallback_rows.append(worker)
+        else:
+            handles.append(handle)
+
+        worker += 1
+
+    sort_cactus_rows(0, worker_count)
+
+    worker = 0
+    while worker < len(handles):
+        wait_for(handles[worker])
+        worker += 1
+
+    worker = 0
+    while worker < len(fallback_rows):
+        sort_cactus_rows(fallback_rows[worker], worker_count)
+        worker += 1
+
+
+def sort_cactus_column(column):
+    size = get_world_size()
+    phase = 0
+
+    while phase < size:
+        y = phase % 2
+        goto(column, y)
+
+        while y + 1 < size:
+            if measure() > measure(North):
+                swap(North)
+            y += 2
+
+            if y + 1 < size:
+                move(North)
+                move(North)
+
+        phase += 1
+
+
+def sort_cactus_columns(start_column, column_step):
+    size = get_world_size()
+    column = start_column
+
+    while column < size:
+        sort_cactus_column(column)
+        column += column_step
+
+
+def cactus_column_sort_worker():
+    sort_cactus_columns(get_pos_x(), CACTUS_COLUMN_SORT_STEP)
+
+
+def run_cactus_column_sort():
+    global CACTUS_COLUMN_SORT_STEP
+    worker_count = drone_worker_count(get_world_size())
+
+    if worker_count <= 1:
+        sort_cactus_columns(0, 1)
+        return
+
+    handles = []
+    fallback_columns = []
+    worker = 1
+
+    CACTUS_COLUMN_SORT_STEP = worker_count
+
+    while worker < worker_count:
+        goto(worker, 0)
+        handle = spawn_drone(cactus_column_sort_worker)
+        if handle == None:
+            fallback_columns.append(worker)
+        else:
+            handles.append(handle)
+
+        worker += 1
+
+    sort_cactus_columns(0, worker_count)
+
+    worker = 0
+    while worker < len(handles):
+        wait_for(handles[worker])
+        worker += 1
+
+    worker = 0
+    while worker < len(fallback_columns):
+        sort_cactus_columns(fallback_columns[worker], worker_count)
+        worker += 1
+
+
+def cactus_world_sorted():
+    size = get_world_size()
+    previous_row = []
+    y = 0
+
+    while y < size:
+        goto(0, y)
+        current_row = []
+        previous_value = None
+        x = 0
+
+        while x < size:
+            if get_entity_type() != Entities.Cactus or not can_harvest():
+                return False
+
+            value = measure()
+
+            if previous_value != None and previous_value > value:
+                return False
+
+            if y > 0 and previous_row[x] > value:
+                return False
+
+            current_row.append(value)
+            previous_value = value
+
+            if x < size - 1:
+                move(East)
+
+            x += 1
+
+        previous_row = current_row
+        y += 1
+
+    return True
 
 
 def sort_cactus_world():
-    grid = current_cactus_grid()
-    target = target_cactus_grid(grid)
-    size = get_world_size()
-    y = 0
+    attempts = 0
 
-    while y < size:
-        x = 0
+    while attempts < 2:
+        run_cactus_row_sort()
+        run_cactus_column_sort()
 
-        while x < size:
-            if grid[y][x] != target[y][x]:
-                source_x, source_y = find_cactus_source(grid, x, y, target[y][x])
-                place_cactus(grid, x, y, source_x, source_y)
-            x += 1
+        if cactus_world_sorted():
+            return True
 
-        y += 1
+        attempts += 1
+
+    return False
