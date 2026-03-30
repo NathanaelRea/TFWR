@@ -6,6 +6,7 @@ from sunflower import *
 from maze import *
 from pumpkin import *
 from cactus import *
+from dino import *
 
 
 def queue_world(target_world):
@@ -15,6 +16,10 @@ def queue_world(target_world):
 
 	if needs_maze_phase():
 		enter_maze_world(target_world)
+		return
+
+	if needs_dino_phase():
+		enter_dino_world(target_world)
 		return
 
 	if target_world == PUMPKIN_WORLD:
@@ -33,15 +38,15 @@ def enter_target_world(target_world):
 
 
 def finish_sunflower_phase():
-	if needs_maze_phase():
-		enter_maze_world(STATE["next_world_mode"])
-		return
-
-	enter_target_world(STATE["next_world_mode"])
+	queue_world(STATE["next_world_mode"])
 
 
 def finish_maze_phase():
-	enter_target_world(STATE["next_world_mode"])
+	queue_world(STATE["next_world_mode"])
+
+
+def finish_dino_phase():
+	queue_world(STATE["next_world_mode"])
 
 
 def finish_normal_sweep():
@@ -69,7 +74,14 @@ def main():
 	queue_world(NORMAL_WORLD)
 
 	while True:
-		equip_phase_hat()
+		if STATE["world_mode"] != DINO_WORLD:
+			equip_phase_hat()
+
+		if STATE["world_mode"] == DINO_WORLD:
+			harvested = run_dino_cycle()
+			quick_print("dino", "harvest", harvested, "bones", num_items(Items.Bone))
+			finish_dino_phase()
+			continue
 
 		if STATE["world_mode"] == MAZE_WORLD:
 			if run_maze_cycle():
