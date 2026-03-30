@@ -352,21 +352,18 @@ def main():
 		run_phase_sweep()
 
 		if STATE["world_mode"] == SUNFLOWER_WORLD:
-			harvested = harvest_ordered_sunflowers()
+			harvested = STATE["sunflower_harvested_count"]
 			if harvested > 0:
-				quick_print("sunflower", "harvest", harvested, STATE["sunflower_max_petals"])
+				quick_print("sunflower", "harvest", harvested, "/", sunflower_area())
 				finish_sunflower_phase()
 			else:
 				quick_print(
 					"sunflower",
 					sunflower_phase_name(),
-					STATE["sunflower_ready_count"],
+					STATE["sunflower_count"],
 					"/",
 					sunflower_area(),
-					STATE["sunflower_max_petals"],
 				)
-				if not STATE["sunflower_verify_mode"]:
-					STATE["sunflower_verify_mode"] = True
 			continue
 
 		if STATE["world_mode"] == PUMPKIN_WORLD:

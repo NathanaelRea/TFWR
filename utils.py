@@ -29,6 +29,7 @@ STATE = {
 	"pumpkin_ready_count": 0,
 	"pumpkin_harvest_target": None,
 	"sunflower_ready_count": 0,
+	"sunflower_harvested_count": 0,
 	"sunflower_targets": {},
 	"sunflower_max_petals": None,
 	"sunflower_count": 0,
@@ -158,7 +159,7 @@ def maintain_soil_water():
 		return False
 	if not item_retry_ready("water_retry_tick"):
 		return False
-	if num_items(Items.Water) <= 0:
+	if num_items(Items.Water) < drone_worker_count(get_world_size()):
 		return False
 	if get_ground_type() != Grounds.Soil:
 		return False
@@ -312,6 +313,7 @@ def reset_cycle_state():
 	STATE["pumpkin_ready_count"] = 0
 	STATE["pumpkin_harvest_target"] = None
 	STATE["sunflower_ready_count"] = 0
+	STATE["sunflower_harvested_count"] = 0
 	STATE["sunflower_targets"] = {}
 	STATE["sunflower_max_petals"] = None
 	STATE["sunflower_count"] = 0
@@ -326,6 +328,4 @@ def pumpkin_phase_name():
 
 
 def sunflower_phase_name():
-	if STATE["sunflower_verify_mode"]:
-		return "verify"
-	return "seed"
+	return "tend"
