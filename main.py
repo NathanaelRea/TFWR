@@ -28,7 +28,7 @@ TRACKED_UPGRADES = [
 ]
 
 POWER_LOW_WATERMARK = 10000
-POWER_HIGH_WATERMARK = 20000
+POWER_HIGH_WATERMARK = 50000
 PUMPKIN_START_CARROT_MULTIPLIER = 2
 ITEM_GOALS = {
 	Items.Hay: 1000000000,
@@ -150,6 +150,14 @@ def maze_phase_substance_budget():
 	return maze_substance_cost() * MAZE_RUNS_PER_PHASE
 
 
+def should_refill_weird_substance():
+	return (
+		num_unlocked(Unlocks.Mazes) > 0
+		and num_items(Items.Weird_Substance) < maze_phase_substance_budget()
+		and can_start_pumpkin_phase()
+	)
+
+
 def can_run_maze_block():
 	return num_items(Items.Weird_Substance) >= maze_phase_substance_budget()
 
@@ -177,32 +185,68 @@ def should_fill_power_buffer(missing_items):
 	)
 
 
-def choose_target_world():
-	missing_items = upgrade_missing_items()
+def add_unique_world(worlds, world_mode):
+	if world_mode not in worlds:
+		worlds.append(world_mode)
+
+
+def choose_random_world(worlds):
+	index = random() * len(worlds) // 1
+	return worlds[index]
+
+
+def top_tier_worlds(missing_items):
+	worlds = []
 	missing_bones = missing_item_amount(missing_items, Items.Bone)
 	missing_gold = missing_item_amount(missing_items, Items.Gold)
-	missing_pumpkins = missing_item_amount(missing_items, Items.Pumpkin)
 	missing_cactus = missing_item_amount(missing_items, Items.Cactus)
-	missing_power = missing_item_amount(missing_items, Items.Power)
-
-	if should_fill_power_buffer(missing_items):
-		return SUNFLOWER_WORLD
 
 	if missing_bones > 0 and can_farm_bones():
 		if needs_dino_phase():
-			return DINO_WORLD
+			add_unique_world(worlds, DINO_WORLD)
+		elif num_items(Items.Cactus) < dino_cactus_budget():
+			add_unique_world(worlds, CACTUS_WORLD)
 
-		if num_items(Items.Cactus) < dino_cactus_budget():
-			return CACTUS_WORLD
+	if missing_gold > 0:
+		if can_run_maze_block():
+			add_unique_world(worlds, MAZE_WORLD)
+		elif should_refill_weird_substance():
+			add_unique_world(worlds, PUMPKIN_WORLD)
 
-	if missing_gold > 0 and can_run_maze_block():
-		return MAZE_WORLD
+	if missing_cactus > 0:
+		add_unique_world(worlds, CACTUS_WORLD)
+
+	return worlds
+
+
+def has_lower_tier_goal(missing_items):
+	return (
+		missing_item_amount(missing_items, Items.Hay) > 0
+		or missing_item_amount(missing_items, Items.Wood) > 0
+		or missing_item_amount(missing_items, Items.Carrot) > 0
+	)
+
+
+def choose_target_world():
+	missing_items = upgrade_missing_items()
+	missing_pumpkins = missing_item_amount(missing_items, Items.Pumpkin)
+	missing_power = missing_item_amount(missing_items, Items.Power)
+
+	if num_items(Items.Power) < POWER_LOW_WATERMARK:
+		return SUNFLOWER_WORLD
+
+	worlds = top_tier_worlds(missing_items)
+	if len(worlds) > 0:
+		return choose_random_world(worlds)
 
 	if missing_pumpkins > 0 and can_start_pumpkin_phase():
 		return PUMPKIN_WORLD
 
-	if missing_cactus > 0:
-		return CACTUS_WORLD
+	if should_fill_power_buffer(missing_items):
+		return SUNFLOWER_WORLD
+
+	if has_lower_tier_goal(missing_items):
+		return NORMAL_WORLD
 
 	if missing_power > 0:
 		return SUNFLOWER_WORLD
