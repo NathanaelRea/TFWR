@@ -50,6 +50,17 @@ def next_upgrade_cost(unlock):
 	return get_cost(unlock, num_unlocked(unlock) + 1)
 
 
+def can_afford_cost(cost):
+	if cost == None:
+		return False
+
+	for item in cost:
+		if num_items(item) < cost[item]:
+			return False
+
+	return True
+
+
 def missing_item_amount(missing_items, item):
 	if item not in missing_items:
 		return 0
@@ -77,6 +88,26 @@ def upgrade_missing_items():
 			add_missing_costs(missing_items, cost)
 
 	return missing_items
+
+
+def buy_available_upgrades():
+	bought_any = False
+	keep_checking = True
+
+	while keep_checking:
+		keep_checking = False
+
+		for target_unlock in TRACKED_UPGRADES:
+			cost = next_upgrade_cost(target_unlock)
+			if not can_afford_cost(cost):
+				continue
+
+			if unlock(target_unlock):
+				quick_print("upgrade", target_unlock, num_unlocked(target_unlock))
+				bought_any = True
+				keep_checking = True
+
+	return bought_any
 
 
 def pumpkin_start_carrots():
@@ -174,6 +205,7 @@ def enter_phase(world_mode):
 
 
 def queue_recommended_world():
+	buy_available_upgrades()
 	target_world = choose_target_world()
 	previous_world = STATE["world_mode"]
 	enter_phase(target_world)
