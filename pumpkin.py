@@ -1,6 +1,9 @@
 from __builtins__ import *
 from utils import *
 
+PUMPKIN_DRONE_START_ROW = 0
+PUMPKIN_DRONE_ROW_STEP = 1
+
 
 def maintain_pumpkin():
     x = get_pos_x()
@@ -40,6 +43,67 @@ def maintain_pumpkin():
 
         plant_target(Entities.Pumpkin)
         return
+
+
+def pumpkin_summary():
+    return {
+        "pumpkin_dead_repairs": STATE["pumpkin_dead_repairs"],
+        "pumpkin_ready_count": STATE["pumpkin_ready_count"],
+        "pumpkin_harvest_target": STATE["pumpkin_harvest_target"],
+    }
+
+
+def merge_pumpkin_summary(summary):
+    STATE["pumpkin_dead_repairs"] += summary["pumpkin_dead_repairs"]
+    STATE["pumpkin_ready_count"] += summary["pumpkin_ready_count"]
+
+    if summary["pumpkin_harvest_target"] != None:
+        STATE["pumpkin_harvest_target"] = summary["pumpkin_harvest_target"]
+
+
+def pumpkin_sweep_worker():
+    reset_cycle_state()
+    sweep_selected_rows(maintain_pumpkin, PUMPKIN_DRONE_START_ROW, PUMPKIN_DRONE_ROW_STEP)
+    return pumpkin_summary()
+
+
+def run_pumpkin_sweep():
+    global PUMPKIN_DRONE_START_ROW
+    global PUMPKIN_DRONE_ROW_STEP
+    worker_count = drone_worker_count(get_world_size())
+    reset_cycle_state()
+
+    if worker_count <= 1:
+        sweep_world(maintain_pumpkin)
+        return
+
+    handles = []
+    fallback_rows = []
+    worker = 1
+
+    while worker < worker_count:
+        PUMPKIN_DRONE_START_ROW = worker
+        PUMPKIN_DRONE_ROW_STEP = worker_count
+
+        handle = spawn_drone(pumpkin_sweep_worker)
+        if handle == None:
+            fallback_rows.append(worker)
+        else:
+            handles.append(handle)
+
+        worker += 1
+
+    sweep_selected_rows(maintain_pumpkin, 0, worker_count)
+
+    worker = 0
+    while worker < len(handles):
+        merge_pumpkin_summary(wait_for(handles[worker]))
+        worker += 1
+
+    worker = 0
+    while worker < len(fallback_rows):
+        sweep_selected_rows(maintain_pumpkin, fallback_rows[worker], worker_count)
+        worker += 1
 
 
 def harvest_mega_pumpkin():

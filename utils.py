@@ -96,6 +96,23 @@ def sweep_world(visit_tile):
     sweep_rows(visit_tile, size)
 
 
+def sweep_selected_rows(visit_tile, start_row, row_step):
+    size = get_world_size()
+    y = start_row
+
+    while y < size:
+        goto(0, y)
+        x = 0
+
+        while x < size:
+            visit_tile()
+            if x < size - 1:
+                move(East)
+            x += 1
+
+        y += row_step
+
+
 def sweep_rows(visit_tile, row_count):
     size = get_world_size()
     moving_east = True
@@ -144,6 +161,24 @@ def enter_normal_world():
     STATE["maze_runs_remaining"] = 0
     STATE["normal_sweeps_remaining"] = NORMAL_WORLD_SWEEPS
     STATE["pumpkin_use_fertilizer"] = False
+
+
+def mega_farm_enabled():
+    return num_unlocked(Unlocks.Megafarm) > 0 and max_drones() > 1
+
+
+def drone_worker_count(task_count):
+    if task_count <= 1:
+        return 1
+
+    if not mega_farm_enabled():
+        return 1
+
+    workers = max_drones()
+    if workers < task_count:
+        return workers
+
+    return task_count
 
 
 def reset_cycle_state():

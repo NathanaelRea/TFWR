@@ -1,6 +1,9 @@
 from __builtins__ import *
 from utils import *
 
+CACTUS_DRONE_START_ROW = 0
+CACTUS_DRONE_ROW_STEP = 1
+
 
 def maintain_cactus():
     current = get_entity_type()
@@ -15,6 +18,65 @@ def maintain_cactus():
         harvest()
 
     plant_target(Entities.Cactus)
+
+
+def cactus_summary():
+    return {
+        "cactus_ready_count": STATE["cactus_ready_count"],
+        "cactus_sizes": STATE["cactus_sizes"],
+    }
+
+
+def merge_cactus_summary(summary):
+    STATE["cactus_ready_count"] += summary["cactus_ready_count"]
+
+    for loc in summary["cactus_sizes"]:
+        STATE["cactus_sizes"][loc] = summary["cactus_sizes"][loc]
+
+
+def cactus_sweep_worker():
+    reset_cycle_state()
+    sweep_selected_rows(maintain_cactus, CACTUS_DRONE_START_ROW, CACTUS_DRONE_ROW_STEP)
+    return cactus_summary()
+
+
+def run_cactus_sweep():
+    global CACTUS_DRONE_START_ROW
+    global CACTUS_DRONE_ROW_STEP
+    worker_count = drone_worker_count(get_world_size())
+    reset_cycle_state()
+
+    if worker_count <= 1:
+        sweep_world(maintain_cactus)
+        return
+
+    handles = []
+    fallback_rows = []
+    worker = 1
+
+    while worker < worker_count:
+        CACTUS_DRONE_START_ROW = worker
+        CACTUS_DRONE_ROW_STEP = worker_count
+
+        handle = spawn_drone(cactus_sweep_worker)
+        if handle == None:
+            fallback_rows.append(worker)
+        else:
+            handles.append(handle)
+
+        worker += 1
+
+    sweep_selected_rows(maintain_cactus, 0, worker_count)
+
+    worker = 0
+    while worker < len(handles):
+        merge_cactus_summary(wait_for(handles[worker]))
+        worker += 1
+
+    worker = 0
+    while worker < len(fallback_rows):
+        sweep_selected_rows(maintain_cactus, fallback_rows[worker], worker_count)
+        worker += 1
 
 
 def empty_cactus_grid():

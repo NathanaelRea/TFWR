@@ -1,6 +1,10 @@
 from __builtins__ import *
 from utils import *
 
+MAZE_DRONE_DIRECTION = None
+MAZE_DRONE_TARGET = None
+MAZE_DRONE_VISITED = None
+
 
 def maze_substance_cost():
     return get_world_size() * 2 ** (num_unlocked(Unlocks.Mazes) - 1)
@@ -23,8 +27,6 @@ def is_active_maze():
 
 
 def ensure_maze():
-    goto(0, 0)
-
     if is_active_maze():
         return True
 
@@ -82,21 +84,117 @@ def ordered_maze_directions(x, y, target_x, target_y):
     return directions
 
 
-def next_maze_direction(visited, target_x, target_y):
+def maze_available_directions(visited, target_x, target_y):
+    directions = []
     x = get_pos_x()
     y = get_pos_y()
-    directions = ordered_maze_directions(x, y, target_x, target_y)
+    ordered = ordered_maze_directions(x, y, target_x, target_y)
     index = 0
 
-    while index < len(directions):
-        direction = directions[index]
-        if can_move(direction):
+    while index < len(ordered):
+        direction = ordered[index]
+        if can_move(direction) and direction not in directions:
             next_x, next_y = maze_neighbor(x, y, direction)
             if (next_x, next_y) not in visited:
-                return direction
+                directions.append(direction)
         index += 1
 
-    return None
+    return directions
+
+
+def copy_visited(visited):
+    copied = set()
+
+    for loc in visited:
+        copied.add(loc)
+
+    return copied
+
+
+def maze_branch_worker():
+    target_x, target_y = MAZE_DRONE_TARGET
+    return solve_maze_branch(MAZE_DRONE_DIRECTION, target_x, target_y, MAZE_DRONE_VISITED)
+
+
+def solve_maze_branch(direction, target_x, target_y, visited):
+    if not is_active_maze():
+        return False
+
+    x = get_pos_x()
+    y = get_pos_y()
+    next_x, next_y = maze_neighbor(x, y, direction)
+
+    if (next_x, next_y) in visited:
+        return False
+    if not move(direction):
+        return False
+    if not is_active_maze():
+        return False
+
+    visited.add((get_pos_x(), get_pos_y()))
+    if solve_maze_position(target_x, target_y, visited):
+        return True
+
+    move(maze_opposite(direction))
+    return False
+
+
+def solve_maze_position(target_x, target_y, visited):
+    global MAZE_DRONE_DIRECTION
+    global MAZE_DRONE_TARGET
+    global MAZE_DRONE_VISITED
+
+    if not is_active_maze():
+        return False
+
+    if get_pos_x() == target_x and get_pos_y() == target_y:
+        if get_entity_type() != Entities.Treasure:
+            return False
+        if not can_harvest():
+            return False
+
+        harvest()
+        return True
+
+    directions = maze_available_directions(visited, target_x, target_y)
+    if len(directions) <= 0:
+        return False
+
+    handles = []
+    fallback_directions = []
+    index = 1
+
+    while index < len(directions):
+        MAZE_DRONE_DIRECTION = directions[index]
+        MAZE_DRONE_TARGET = (target_x, target_y)
+        MAZE_DRONE_VISITED = copy_visited(visited)
+
+        handle = spawn_drone(maze_branch_worker)
+        if handle == None:
+            fallback_directions.append(directions[index])
+        else:
+            handles.append(handle)
+
+        index += 1
+
+    solved = solve_maze_branch(directions[0], target_x, target_y, visited)
+
+    index = 0
+    while index < len(handles):
+        if wait_for(handles[index]):
+            solved = True
+        index += 1
+
+    if solved:
+        return True
+
+    index = 0
+    while index < len(fallback_directions):
+        if solve_maze_branch(fallback_directions[index], target_x, target_y, visited):
+            return True
+        index += 1
+
+    return False
 
 
 def solve_current_maze():
@@ -106,35 +204,11 @@ def solve_current_maze():
 
     target_x, target_y = treasure
     visited = set()
-    backtrack = []
     visited.add((get_pos_x(), get_pos_y()))
-
-    while True:
-        if get_pos_x() == target_x and get_pos_y() == target_y:
-            return True
-
-        direction = next_maze_direction(visited, target_x, target_y)
-        if direction != None:
-            move(direction)
-            backtrack.append(maze_opposite(direction))
-            visited.add((get_pos_x(), get_pos_y()))
-            continue
-
-        if len(backtrack) <= 0:
-            return False
-
-        move(backtrack.pop())
+    return solve_maze_position(target_x, target_y, visited)
 
 
 def run_maze_cycle():
     if not ensure_maze():
         return False
-    if not solve_current_maze():
-        return False
-    if get_entity_type() != Entities.Treasure:
-        return False
-    if not can_harvest():
-        return False
-
-    harvest()
-    return True
+    return solve_current_maze()

@@ -6,18 +6,6 @@ from pumpkin import *
 from cactus import *
 
 
-def visit_tile():
-    if STATE["world_mode"] == SUNFLOWER_WORLD:
-        maintain_sunflower()
-        return
-
-    if STATE["world_mode"] == PUMPKIN_WORLD:
-        maintain_pumpkin()
-        return
-
-    maintain_cactus()
-
-
 def queue_world(target_world):
     if needs_sunflower_phase():
         switch_to_sunflower_world(target_world)
@@ -63,6 +51,18 @@ def finish_normal_sweep():
         queue_world(PUMPKIN_WORLD)
 
 
+def run_phase_sweep():
+    if STATE["world_mode"] == SUNFLOWER_WORLD:
+        run_sunflower_sweep()
+        return
+
+    if STATE["world_mode"] == PUMPKIN_WORLD:
+        run_pumpkin_sweep()
+        return
+
+    run_cactus_sweep()
+
+
 def main():
     queue_world(NORMAL_WORLD)
 
@@ -83,8 +83,7 @@ def main():
                 finish_maze_phase()
             continue
 
-        reset_cycle_state()
-        sweep_world(visit_tile)
+        run_phase_sweep()
 
         if STATE["world_mode"] == SUNFLOWER_WORLD:
             harvested = harvest_ordered_sunflowers()
