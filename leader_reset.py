@@ -332,6 +332,18 @@ def should_fill_power():
     )
 
 
+def can_plant_power_sunflower(carrot_reserve):
+    return (
+        get_pos_x() > 0
+        and can_afford_entity_with_item_reserve(
+            Entities.Sunflower,
+            2,
+            Items.Carrot,
+            carrot_reserve,
+        )
+    )
+
+
 def phase1_resource_crop():
     if num_items(Items.Hay) < num_items(Items.Wood):
         return Entities.Grass
@@ -373,6 +385,18 @@ def choose_phase1_tile_crop():
 
         return phase1_resource_crop()
 
+    tree_carrot_reserve = missing_cost_item(Unlocks.Trees, 1, Items.Carrot)
+
+    if (
+        tree_carrot_reserve > 0
+        and use_phase1_carrot_lane()
+        and can_afford_entity_with_buffer(Entities.Carrot, 2)
+    ):
+        return Entities.Carrot
+
+    if should_fill_power() and can_plant_power_sunflower(tree_carrot_reserve):
+        return Entities.Sunflower
+
     return phase1_resource_crop()
 
 
@@ -398,19 +422,8 @@ def choose_phase2_tile_crop():
     elif num_unlocked(Unlocks.Pumpkins) <= 0:
         carrot_reserve = missing_cost_item(Unlocks.Pumpkins, 1, Items.Carrot)
 
-    if should_fill_power():
-        if (
-            get_pos_x() > 0
-            and can_afford_entity_with_item_reserve(
-                Entities.Sunflower,
-                2,
-                Items.Carrot,
-                carrot_reserve,
-            )
-        ):
-            return Entities.Sunflower
-
-        return phase2_resource_crop()
+    if should_fill_power() and can_plant_power_sunflower(carrot_reserve):
+        return Entities.Sunflower
 
     if num_unlocked(Unlocks.Trees) <= 0:
         missing_tree_carrots = missing_cost_item(Unlocks.Trees, 1, Items.Carrot)
