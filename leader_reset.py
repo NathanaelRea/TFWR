@@ -356,14 +356,11 @@ def phase1_resource_crop():
 
 
 def phase2_resource_crop():
-    if num_unlocked(Unlocks.Trees) <= 0:
-        return phase1_resource_crop()
-
     if num_items(Items.Hay) < num_items(Items.Wood):
         return Entities.Grass
 
-    if can_afford_entity_with_buffer(Entities.Tree, 2):
-        return Entities.Tree
+    if num_unlocked(Entities.Bush) > 0:
+        return Entities.Bush
 
     return Entities.Grass
 
@@ -414,6 +411,17 @@ def use_phase2_carrot_lane():
     return get_pos_y() % 4 == 0
 
 
+def use_tree_lane():
+    return (get_pos_x() + get_pos_y()) % 2 == 0
+
+
+def choose_tree_crop(fallback_crop):
+    if use_tree_lane() and can_afford_entity_with_buffer(Entities.Tree, 2):
+        return Entities.Tree
+
+    return fallback_crop
+
+
 def choose_phase2_tile_crop():
     carrot_reserve = 0
 
@@ -438,9 +446,7 @@ def choose_phase2_tile_crop():
         return phase1_resource_crop()
 
     if num_unlocked(Unlocks.Fertilizer) <= 0:
-        if can_afford_entity_with_buffer(Entities.Tree, 2):
-            return Entities.Tree
-        return Entities.Grass
+        return choose_tree_crop(phase2_resource_crop())
 
     if num_unlocked(Unlocks.Pumpkins) <= 0:
         missing_wood = missing_cost_item(Unlocks.Pumpkins, 1, Items.Wood)
@@ -449,17 +455,11 @@ def choose_phase2_tile_crop():
         if missing_carrot > missing_wood:
             if use_phase2_carrot_lane() and can_afford_entity_with_buffer(Entities.Carrot, 2):
                 return Entities.Carrot
-            return Entities.Grass
+            return phase2_resource_crop()
 
-        if can_afford_entity_with_buffer(Entities.Tree, 2):
-            return Entities.Tree
+        return choose_tree_crop(phase2_resource_crop())
 
-        return Entities.Grass
-
-    if can_afford_entity_with_buffer(Entities.Tree, 2):
-        return Entities.Tree
-
-    return phase2_resource_crop()
+    return choose_tree_crop(phase2_resource_crop())
 
 
 def farm_with_companions():
