@@ -417,7 +417,7 @@ def dino_main():
 
 	while True:
 		harvested = run_dino_cycle()
-		quick_print("dino", "harvest", harvested, "bones", num_items(Items.Bone))
+		quick_print(get_tick_count(), "dino", "harvest", harvested, "bones", num_items(Items.Bone))
 
 
 if should_auto_run():

@@ -237,9 +237,10 @@ def pumpkin_main():
 
 		if harvest_mega_pumpkin():
 			restart_pumpkin_cycle()
-			quick_print("pumpkin", "harvest", pumpkin_area())
+			quick_print(get_tick_count(), "pumpkin", "harvest", pumpkin_area())
 		else:
 			quick_print(
+				get_tick_count(),
 				"pumpkin",
 				pumpkin_phase_name(),
 				STATE["pumpkin_ready_count"],

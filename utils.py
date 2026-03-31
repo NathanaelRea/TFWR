@@ -43,8 +43,6 @@ STATE = {
 	"water_retry_tick": 0,
 	"fertilizer_retry_tick": 0,
 }
-
-
 def pumpkin_area():
 	size = get_world_size()
 	return size * size

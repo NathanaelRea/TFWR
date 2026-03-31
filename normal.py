@@ -237,7 +237,7 @@ def normal_main():
 
 	while True:
 		run_normal_sweep()
-		quick_print("normal", "companions", active_normal_companion_count())
+		quick_print(get_tick_count(), "normal", "companions", active_normal_companion_count())
 
 
 if should_auto_run():

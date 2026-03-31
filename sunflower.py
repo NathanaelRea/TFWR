@@ -204,9 +204,10 @@ def sunflower_main():
 
 		harvested = harvest_ordered_sunflowers()
 		if harvested > 0:
-			quick_print("sunflower", "harvest", harvested, "/", sunflower_area())
+			quick_print(get_tick_count(), "sunflower", "harvest", harvested, "/", sunflower_area())
 		else:
 			quick_print(
+				get_tick_count(),
 				"sunflower",
 				sunflower_phase_name(),
 				STATE["sunflower_count"],

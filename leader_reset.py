@@ -109,7 +109,7 @@ def buy_priority(shopping_list):
 
         if can_afford(target):
             if unlock(target):
-                quick_print("unlock", target, num_unlocked(target))
+                quick_print(get_tick_count(), "unlock", target, num_unlocked(target))
                 return True
     return False
 
@@ -117,17 +117,17 @@ def buy_priority(shopping_list):
 def buy_bootstrap_unlock():
     if num_unlocked(Unlocks.Speed) <= 0 and can_afford(Unlocks.Speed):
         if unlock(Unlocks.Speed):
-            quick_print("unlock", Unlocks.Speed, num_unlocked(Unlocks.Speed))
+            quick_print(get_tick_count(), "unlock", Unlocks.Speed, num_unlocked(Unlocks.Speed))
             return True
 
     if num_unlocked(Unlocks.Grass) <= 0 and can_afford(Unlocks.Grass):
         if unlock(Unlocks.Grass):
-            quick_print("unlock", Unlocks.Grass, num_unlocked(Unlocks.Grass))
+            quick_print(get_tick_count(), "unlock", Unlocks.Grass, num_unlocked(Unlocks.Grass))
             return True
 
     if get_world_size() <= 1 and can_afford(Unlocks.Expand):
         if unlock(Unlocks.Expand):
-            quick_print("unlock", Unlocks.Expand, num_unlocked(Unlocks.Expand))
+            quick_print(get_tick_count(), "unlock", Unlocks.Expand, num_unlocked(Unlocks.Expand))
             return True
 
     return buy_priority(PHASE_0_QUEUE)
@@ -136,12 +136,12 @@ def buy_bootstrap_unlock():
 def buy_phase1_unlock():
     if num_unlocked(Unlocks.Expand) <= 1 and can_afford(Unlocks.Expand):
         if unlock(Unlocks.Expand):
-            quick_print("unlock", Unlocks.Expand, num_unlocked(Unlocks.Expand))
+            quick_print(get_tick_count(), "unlock", Unlocks.Expand, num_unlocked(Unlocks.Expand))
             return True
 
     if num_unlocked(Unlocks.Speed) <= 1 and can_afford(Unlocks.Speed):
         if unlock(Unlocks.Speed):
-            quick_print("unlock", Unlocks.Speed, num_unlocked(Unlocks.Speed))
+            quick_print(get_tick_count(), "unlock", Unlocks.Speed, num_unlocked(Unlocks.Speed))
             return True
 
     return buy_priority(PHASE_1_QUEUE)
@@ -612,7 +612,7 @@ def phase5_endgame_rush():
 def run_reset():
     while num_unlocked(Unlocks.Leaderboard) <= 0:
         phase = current_phase()
-        quick_print("phase", phase, "size", get_world_size())
+        quick_print(get_tick_count(), "phase", phase, "size", get_world_size())
 
         if phase == 0:
             phase0_bootstrap()

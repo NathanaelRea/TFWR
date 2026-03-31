@@ -246,9 +246,9 @@ def maze_main():
 
 	while True:
 		if run_maze_cycle():
-			quick_print("maze", "harvest")
+			quick_print(get_tick_count(), "maze", "harvest")
 		else:
-			quick_print("maze", "skip")
+			quick_print(get_tick_count(), "maze", "skip")
 
 
 if should_auto_run():

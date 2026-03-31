@@ -242,11 +242,11 @@ def log_next_upgrade_step():
 
 	LAST_LOGGED_UPGRADE_STEP = step
 	if step == None:
-		quick_print("next", "items")
+		quick_print(get_tick_count(), "next", "items")
 		return
 
 	target_unlock, target_level = step
-	quick_print("next", target_unlock, target_level)
+	quick_print(get_tick_count(), "next", target_unlock, target_level)
 
 
 def pumpkin_start_carrots():
@@ -405,7 +405,7 @@ def queue_recommended_world():
 	enter_phase(target_world)
 
 	if previous_world != target_world:
-		quick_print("phase", phase_name(target_world))
+		quick_print(get_tick_count(), "phase", phase_name(target_world))
 
 
 def finish_sunflower_phase():
@@ -456,21 +456,21 @@ def main():
 	while True:
 		if STATE["world_mode"] == DINO_WORLD:
 			harvested = run_dino_cycle()
-			quick_print("dino", "harvest", harvested, "bones", num_items(Items.Bone))
+			quick_print(get_tick_count(), "dino", "harvest", harvested, "bones", num_items(Items.Bone))
 			finish_dino_phase()
 			continue
 
 		if STATE["world_mode"] == MAZE_WORLD:
 			if run_maze_cycle():
 				STATE["maze_runs_remaining"] -= 1
-				quick_print("maze", "harvest", MAZE_RUNS_PER_PHASE - STATE["maze_runs_remaining"])
+				quick_print(get_tick_count(), "maze", "harvest", MAZE_RUNS_PER_PHASE - STATE["maze_runs_remaining"])
 
 				if STATE["maze_runs_remaining"] > 0 and can_finish_maze_phase():
 					continue
 
 				finish_maze_phase()
 			else:
-				quick_print("maze", "skip", STATE["maze_runs_remaining"])
+				quick_print(get_tick_count(), "maze", "skip", STATE["maze_runs_remaining"])
 				finish_maze_phase()
 			continue
 
@@ -479,10 +479,11 @@ def main():
 		if STATE["world_mode"] == SUNFLOWER_WORLD:
 			harvested = STATE["sunflower_harvested_count"]
 			if harvested > 0:
-				quick_print("sunflower", "harvest", harvested, "/", sunflower_area())
+				quick_print(get_tick_count(), "sunflower", "harvest", harvested, "/", sunflower_area())
 				finish_sunflower_phase()
 			else:
 				quick_print(
+					get_tick_count(),
 					"sunflower",
 					sunflower_phase_name(),
 					STATE["sunflower_count"],
@@ -494,10 +495,11 @@ def main():
 		if STATE["world_mode"] == PUMPKIN_WORLD:
 			if harvest_mega_pumpkin():
 				restart_pumpkin_cycle()
-				quick_print("pumpkin", "harvest", pumpkin_area())
+				quick_print(get_tick_count(), "pumpkin", "harvest", pumpkin_area())
 				queue_recommended_world()
 			else:
 				quick_print(
+					get_tick_count(),
 					"pumpkin",
 					pumpkin_phase_name(),
 					STATE["pumpkin_ready_count"],
@@ -514,7 +516,7 @@ def main():
 
 		if STATE["world_mode"] == CACTUS_WORLD:
 			if STATE["cactus_ready_count"] < cactus_area():
-				quick_print("cactus", "grow", STATE["cactus_ready_count"], "/", cactus_area())
+				quick_print(get_tick_count(), "cactus", "grow", STATE["cactus_ready_count"], "/", cactus_area())
 				continue
 
 			sort_cactus_world()
@@ -522,14 +524,15 @@ def main():
 
 			if get_entity_type() == Entities.Cactus and can_harvest():
 				harvest()
-				quick_print("cactus", "harvest", cactus_area())
+				quick_print(get_tick_count(), "cactus", "harvest", cactus_area())
 			else:
-				quick_print("cactus", "retry", STATE["cactus_ready_count"], "/", cactus_area())
+				quick_print(get_tick_count(), "cactus", "retry", STATE["cactus_ready_count"], "/", cactus_area())
 
 			finish_cactus_phase()
 			continue
 
 		quick_print(
+			get_tick_count(),
 			"normal",
 			"sweeps",
 			STATE["normal_sweeps_remaining"],

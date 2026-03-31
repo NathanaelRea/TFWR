@@ -258,13 +258,13 @@ def cactus_main():
 		run_cactus_sweep()
 
 		if STATE["cactus_ready_count"] < cactus_area():
-			quick_print("cactus", "grow", STATE["cactus_ready_count"], "/", cactus_area())
+			quick_print(get_tick_count(), "cactus", "grow", STATE["cactus_ready_count"], "/", cactus_area())
 			continue
 
 		sort_cactus_world()
 		goto(0, 0)
 		harvest()
-		quick_print("cactus", "harvest", cactus_area())
+		quick_print(get_tick_count(), "cactus", "harvest", cactus_area())
 
 
 if should_auto_run():
