@@ -328,4 +328,6 @@ def pumpkin_phase_name():
 
 
 def sunflower_phase_name():
-	return "tend"
+	if STATE["sunflower_ready_count"] > 0:
+		return "harvest"
+	return "scan"

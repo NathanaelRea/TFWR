@@ -5,6 +5,10 @@ SUNFLOWER_DRONE_START_ROW = 0
 SUNFLOWER_DRONE_ROW_STEP = 1
 
 
+def sunflower_key(x, y):
+	return y * get_world_size() + x
+
+
 def sunflower_rows():
 	return get_world_size()
 
@@ -43,15 +47,43 @@ def prepare_sunflower_tile():
 	return True
 
 
+def reset_sunflower_targets():
+	STATE["sunflower_ready_count"] = 0
+	STATE["sunflower_targets"] = {}
+	STATE["sunflower_max_petals"] = None
+
+
+def note_sunflower_target(petals):
+	if petals == None:
+		return
+
+	if STATE["sunflower_max_petals"] == None or petals > STATE["sunflower_max_petals"]:
+		reset_sunflower_targets()
+		STATE["sunflower_max_petals"] = petals
+
+	if petals != STATE["sunflower_max_petals"]:
+		return
+
+	if not can_harvest():
+		return
+
+	key = sunflower_key(get_pos_x(), get_pos_y())
+	if key in STATE["sunflower_targets"]:
+		return
+
+	STATE["sunflower_targets"][key] = True
+	STATE["sunflower_ready_count"] += 1
+
+
 def maintain_sunflower():
 	if not prepare_sunflower_tile():
 		return
 
 	STATE["sunflower_count"] += 1
+	petals = measure()
+	note_sunflower_target(petals)
+
 	if can_harvest():
-		harvest()
-		STATE["sunflower_harvested_count"] += 1
-		plant_target(Entities.Sunflower)
 		return
 
 	maintain_soil_water()
@@ -60,13 +92,36 @@ def maintain_sunflower():
 def sunflower_summary():
 	return {
 		"sunflower_count": STATE["sunflower_count"],
-		"sunflower_harvested_count": STATE["sunflower_harvested_count"],
+		"sunflower_max_petals": STATE["sunflower_max_petals"],
+		"sunflower_targets": STATE["sunflower_targets"],
 	}
+
+
+def merge_sunflower_targets(max_petals, targets):
+	if max_petals == None:
+		return
+
+	if STATE["sunflower_max_petals"] == None or max_petals > STATE["sunflower_max_petals"]:
+		reset_sunflower_targets()
+		STATE["sunflower_max_petals"] = max_petals
+
+	if max_petals != STATE["sunflower_max_petals"]:
+		return
+
+	for key in targets:
+		if key in STATE["sunflower_targets"]:
+			continue
+
+		STATE["sunflower_targets"][key] = True
+		STATE["sunflower_ready_count"] += 1
 
 
 def merge_sunflower_summary(summary):
 	STATE["sunflower_count"] += summary["sunflower_count"]
-	STATE["sunflower_harvested_count"] += summary["sunflower_harvested_count"]
+	merge_sunflower_targets(
+		summary["sunflower_max_petals"],
+		summary["sunflower_targets"],
+	)
 
 
 def sunflower_sweep_worker():
@@ -114,7 +169,30 @@ def run_sunflower_sweep():
 		worker += 1
 
 
+def harvest_targeted_sunflower():
+	if get_entity_type() != Entities.Sunflower:
+		return
+	if not can_harvest():
+		return
+
+	key = sunflower_key(get_pos_x(), get_pos_y())
+	if key not in STATE["sunflower_targets"]:
+		return
+
+	if measure() != STATE["sunflower_max_petals"]:
+		return
+
+	harvest()
+	STATE["sunflower_harvested_count"] += 1
+	plant_target(Entities.Sunflower)
+	maintain_soil_water()
+
+
 def harvest_ordered_sunflowers():
+	if STATE["sunflower_ready_count"] <= 0:
+		return 0
+
+	sweep_world(harvest_targeted_sunflower)
 	return STATE["sunflower_harvested_count"]
 
 

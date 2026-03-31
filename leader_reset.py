@@ -8,39 +8,38 @@ from __builtins__ import *
 
 
 PHASE_0_QUEUE = [
-    Unlocks.Plant,
+    (Unlocks.Plant, 1),
 ]
 
 PHASE_1_QUEUE = [
-    Unlocks.Carrots,
-    Unlocks.Trees,
-    Unlocks.Watering,
+    (Unlocks.Carrots, 1),
+    (Unlocks.Watering, 1),
+    (Unlocks.Sunflowers, 1),
 ]
 
 PHASE_2_QUEUE = [
-    Unlocks.Pumpkins,
-    Unlocks.Sunflowers,
-    Unlocks.Fertilizer,
+    (Unlocks.Trees, 1),
+    (Unlocks.Fertilizer, 1),
+    (Unlocks.Pumpkins, 1),
 ]
 
 PHASE_3_QUEUE = [
-    Unlocks.Polyculture,
-    Unlocks.Cactus,
-    Unlocks.Mazes,
+    (Unlocks.Polyculture, 1),
+    (Unlocks.Cactus, 1),
+    (Unlocks.Mazes, 1),
 ]
 
 PHASE_4_QUEUE = [
-    Unlocks.Dinosaurs,
-    Unlocks.Megafarm,
+    (Unlocks.Dinosaurs, 1),
+    (Unlocks.Megafarm, 1),
 ]
 
 PHASE_5_QUEUE = [
-    Unlocks.Leaderboard,
+    (Unlocks.Leaderboard, 1),
 ]
 
 
-def can_afford(target):
-    cost = get_cost(target)
+def can_afford_cost(cost):
     if cost == None:
         return False
 
@@ -51,8 +50,63 @@ def can_afford(target):
     return True
 
 
+def can_afford(target):
+    return can_afford_cost(get_cost(target))
+
+
+def can_afford_entity(entity):
+    if entity == Entities.Grass:
+        return True
+
+    return can_afford_cost(get_cost(entity))
+
+
+def can_afford_entity_with_buffer(entity, copies):
+    if entity == Entities.Grass:
+        return True
+
+    cost = get_cost(entity)
+    if cost == None:
+        return False
+
+    for item in cost:
+        if num_items(item) < cost[item] * copies:
+            return False
+
+    return True
+
+
+def can_afford_entity_with_item_reserve(entity, copies, reserve_item, reserve_amount):
+    if entity == Entities.Grass:
+        return num_items(reserve_item) >= reserve_amount
+
+    cost = get_cost(entity)
+    if cost == None:
+        return False
+
+    reserved = False
+
+    for item in cost:
+        needed = cost[item] * copies
+
+        if item == reserve_item:
+            needed += reserve_amount
+            reserved = True
+
+        if num_items(item) < needed:
+            return False
+
+    if not reserved and num_items(reserve_item) < reserve_amount:
+        return False
+
+    return True
+
+
 def buy_priority(shopping_list):
-    for target in shopping_list:
+    for target, target_level in shopping_list:
+        if num_unlocked(target) >= target_level:
+            continue
+
         if can_afford(target):
             if unlock(target):
                 quick_print("unlock", target, num_unlocked(target))
@@ -91,6 +145,41 @@ def buy_phase1_unlock():
             return True
 
     return buy_priority(PHASE_1_QUEUE)
+
+
+def missing_cost_item(target, target_level, item):
+    if num_unlocked(target) >= target_level:
+        return 0
+
+    cost = get_cost(target)
+    if cost == None or item not in cost:
+        return 0
+
+    shortfall = cost[item] - num_items(item)
+    if shortfall <= 0:
+        return 0
+
+    return shortfall
+
+
+def missing_entity_cost_item(entity, item):
+    cost = get_cost(entity)
+    if cost == None or item not in cost:
+        return 0
+
+    shortfall = cost[item] - num_items(item)
+    if shortfall <= 0:
+        return 0
+
+    return shortfall
+
+
+def try_plant(entity):
+    if entity == Entities.Grass:
+        return False
+    if not can_afford_entity(entity):
+        return False
+    return plant(entity)
 
 
 def goto(x, y):
@@ -173,7 +262,27 @@ def visit_tile(crop):
     set_ground_for(crop)
 
     if get_entity_type() != crop:
-        plant(crop)
+        try_plant(crop)
+
+
+def farm_grid_dynamic(choose_crop):
+    size = get_world_size()
+    goto(0, 0)
+
+    for y in range(size):
+        if y % 2 == 0:
+            for x in range(size):
+                visit_tile(choose_crop())
+                if x < size - 1:
+                    move(East)
+        else:
+            for x in range(size):
+                visit_tile(choose_crop())
+                if x < size - 1:
+                    move(West)
+
+        if y < size - 1:
+            move(North)
 
 
 def farm_grid(crop):
@@ -211,6 +320,62 @@ def choose_simple_crop():
     return Entities.Grass
 
 
+def power_threshold():
+    size = get_world_size()
+    return size * size * 4
+
+
+def should_fill_power():
+    return (
+        num_unlocked(Unlocks.Sunflowers) > 0
+        and num_items(Items.Power) < power_threshold()
+    )
+
+
+def phase1_resource_crop():
+    if num_items(Items.Hay) < num_items(Items.Wood):
+        return Entities.Grass
+    if num_items(Items.Wood) < num_items(Items.Hay):
+        return Entities.Bush
+
+    if (get_pos_x() + get_pos_y()) % 2 == 0:
+        return Entities.Grass
+    return Entities.Bush
+
+
+def phase2_resource_crop():
+    if num_unlocked(Unlocks.Trees) <= 0:
+        return phase1_resource_crop()
+
+    if num_items(Items.Hay) < num_items(Items.Wood):
+        return Entities.Grass
+
+    if can_afford_entity_with_buffer(Entities.Tree, 2):
+        return Entities.Tree
+
+    return Entities.Grass
+
+
+def use_phase1_carrot_lane():
+    return get_pos_y() % 3 == 0
+
+
+def choose_phase1_tile_crop():
+    if num_unlocked(Unlocks.Carrots) <= 0:
+        return choose_simple_crop()
+
+    if num_unlocked(Unlocks.Watering) <= 0:
+        return phase1_resource_crop()
+
+    if num_unlocked(Unlocks.Sunflowers) <= 0:
+        if get_pos_x() > 0 and can_afford_entity_with_buffer(Entities.Carrot, 3):
+            return Entities.Carrot
+
+        return phase1_resource_crop()
+
+    return phase1_resource_crop()
+
+
 def choose_midgame_crop():
     if num_unlocked(Unlocks.Pumpkins) > 0:
         return Entities.Pumpkin
@@ -219,6 +384,69 @@ def choose_midgame_crop():
     if num_unlocked(Unlocks.Carrots) > 0:
         return Entities.Carrot
     return Entities.Bush
+
+
+def use_phase2_carrot_lane():
+    return get_pos_y() % 4 == 0
+
+
+def choose_phase2_tile_crop():
+    carrot_reserve = 0
+
+    if num_unlocked(Unlocks.Trees) <= 0:
+        carrot_reserve = missing_cost_item(Unlocks.Trees, 1, Items.Carrot)
+    elif num_unlocked(Unlocks.Pumpkins) <= 0:
+        carrot_reserve = missing_cost_item(Unlocks.Pumpkins, 1, Items.Carrot)
+
+    if should_fill_power():
+        if (
+            get_pos_x() > 0
+            and can_afford_entity_with_item_reserve(
+                Entities.Sunflower,
+                2,
+                Items.Carrot,
+                carrot_reserve,
+            )
+        ):
+            return Entities.Sunflower
+
+        return phase2_resource_crop()
+
+    if num_unlocked(Unlocks.Trees) <= 0:
+        missing_tree_carrots = missing_cost_item(Unlocks.Trees, 1, Items.Carrot)
+
+        if (
+            missing_tree_carrots > 0
+            and use_phase1_carrot_lane()
+            and can_afford_entity_with_buffer(Entities.Carrot, 2)
+        ):
+            return Entities.Carrot
+
+        return phase1_resource_crop()
+
+    if num_unlocked(Unlocks.Fertilizer) <= 0:
+        if can_afford_entity_with_buffer(Entities.Tree, 2):
+            return Entities.Tree
+        return Entities.Grass
+
+    if num_unlocked(Unlocks.Pumpkins) <= 0:
+        missing_wood = missing_cost_item(Unlocks.Pumpkins, 1, Items.Wood)
+        missing_carrot = missing_cost_item(Unlocks.Pumpkins, 1, Items.Carrot)
+
+        if missing_carrot > missing_wood:
+            if use_phase2_carrot_lane() and can_afford_entity_with_buffer(Entities.Carrot, 2):
+                return Entities.Carrot
+            return Entities.Grass
+
+        if can_afford_entity_with_buffer(Entities.Tree, 2):
+            return Entities.Tree
+
+        return Entities.Grass
+
+    if can_afford_entity_with_buffer(Entities.Tree, 2):
+        return Entities.Tree
+
+    return phase2_resource_crop()
 
 
 def farm_with_companions():
@@ -270,14 +498,14 @@ def current_phase():
         num_unlocked(Unlocks.Expand) <= 1
         or num_unlocked(Unlocks.Speed) <= 1
         or num_unlocked(Unlocks.Carrots) <= 0
-        or num_unlocked(Unlocks.Trees) <= 0
         or num_unlocked(Unlocks.Watering) <= 0
+        or num_unlocked(Unlocks.Sunflowers) <= 0
         or get_world_size() <= 1
     ):
         return 1
     if (
-        num_unlocked(Unlocks.Pumpkins) <= 0
-        or num_unlocked(Unlocks.Sunflowers) <= 0
+        num_unlocked(Unlocks.Trees) <= 0
+        or num_unlocked(Unlocks.Pumpkins) <= 0
         or num_unlocked(Unlocks.Fertilizer) <= 0
         or get_world_size() < 6
     ):
@@ -319,20 +547,16 @@ def phase1_basic_farming():
         return
 
     if num_unlocked(Unlocks.Expand) <= 1:
-        farm_simple_strip(choose_simple_crop(), 24)
+        farm_simple_strip(choose_phase1_tile_crop(), 24)
         return
 
-    farm_grid(choose_simple_crop())
+    farm_grid_dynamic(choose_phase1_tile_crop)
 
 
 def phase2_adaptive_farming():
     buy_expands_until(6)
     buy_priority(PHASE_2_QUEUE)
-
-    if num_unlocked(Unlocks.Carrots) > 0:
-        farm_grid(Entities.Carrot)
-    else:
-        farm_grid(Entities.Bush)
+    farm_grid_dynamic(choose_phase2_tile_crop)
 
 
 def phase3_intermediate():

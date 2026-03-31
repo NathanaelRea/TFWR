@@ -10,21 +10,109 @@ from cactus import *
 from dino import *
 
 
-TRACKED_UPGRADES = [
-	Unlocks.Speed,
-	Unlocks.Expand,
-	Unlocks.Grass,
-	Unlocks.Trees,
-	Unlocks.Carrots,
-	Unlocks.Watering,
-	Unlocks.Pumpkins,
-	Unlocks.Fertilizer,
-	Unlocks.Sunflowers,
-	Unlocks.Polyculture,
-	Unlocks.Cactus,
-	Unlocks.Mazes,
-	Unlocks.Dinosaurs,
-	Unlocks.Megafarm,
+# Ordered from the reset notes and local docs:
+# bootstrap to pumpkins quickly, pull power online once pumpkins exist,
+# then scale pumpkins into cactus, mazes, megafarm, dinosaurs, and finally
+# the expensive cleanup upgrades that are not part of the main leaderboard gate.
+UPGRADE_ROUTE = [
+	(Unlocks.Speed, 1),
+	(Unlocks.Grass, 1),
+	(Unlocks.Expand, 1),
+	(Unlocks.Plant, 1),
+	(Unlocks.Carrots, 1),
+	(Unlocks.Speed, 2),
+	(Unlocks.Watering, 1),
+	(Unlocks.Trees, 1),
+	(Unlocks.Pumpkins, 1),
+	(Unlocks.Sunflowers, 1),
+	(Unlocks.Fertilizer, 1),
+	(Unlocks.Expand, 2),
+	(Unlocks.Speed, 3),
+	(Unlocks.Carrots, 2),
+	(Unlocks.Trees, 2),
+	(Unlocks.Watering, 2),
+	(Unlocks.Pumpkins, 2),
+	(Unlocks.Fertilizer, 2),
+	(Unlocks.Grass, 2),
+	(Unlocks.Expand, 3),
+	(Unlocks.Speed, 4),
+	(Unlocks.Carrots, 3),
+	(Unlocks.Trees, 3),
+	(Unlocks.Watering, 3),
+	(Unlocks.Pumpkins, 3),
+	(Unlocks.Polyculture, 1),
+	(Unlocks.Fertilizer, 3),
+	(Unlocks.Expand, 4),
+	(Unlocks.Speed, 5),
+	(Unlocks.Carrots, 4),
+	(Unlocks.Trees, 4),
+	(Unlocks.Watering, 4),
+	(Unlocks.Pumpkins, 4),
+	(Unlocks.Fertilizer, 4),
+	(Unlocks.Grass, 3),
+	(Unlocks.Expand, 5),
+	(Unlocks.Carrots, 5),
+	(Unlocks.Trees, 5),
+	(Unlocks.Watering, 5),
+	(Unlocks.Pumpkins, 5),
+	(Unlocks.Cactus, 1),
+	(Unlocks.Mazes, 1),
+	(Unlocks.Expand, 6),
+	(Unlocks.Pumpkins, 6),
+	(Unlocks.Cactus, 2),
+	(Unlocks.Mazes, 2),
+	(Unlocks.Megafarm, 1),
+	(Unlocks.Expand, 7),
+	(Unlocks.Pumpkins, 7),
+	(Unlocks.Cactus, 3),
+	(Unlocks.Mazes, 3),
+	(Unlocks.Megafarm, 2),
+	(Unlocks.Dinosaurs, 1),
+	(Unlocks.Carrots, 6),
+	(Unlocks.Trees, 6),
+	(Unlocks.Watering, 6),
+	(Unlocks.Grass, 4),
+	(Unlocks.Pumpkins, 8),
+	(Unlocks.Cactus, 4),
+	(Unlocks.Mazes, 4),
+	(Unlocks.Megafarm, 3),
+	(Unlocks.Dinosaurs, 2),
+	(Unlocks.Expand, 8),
+	(Unlocks.Carrots, 7),
+	(Unlocks.Trees, 7),
+	(Unlocks.Watering, 7),
+	(Unlocks.Grass, 5),
+	(Unlocks.Pumpkins, 9),
+	(Unlocks.Cactus, 5),
+	(Unlocks.Mazes, 5),
+	(Unlocks.Megafarm, 4),
+	(Unlocks.Dinosaurs, 3),
+	(Unlocks.Expand, 9),
+	(Unlocks.Carrots, 8),
+	(Unlocks.Trees, 8),
+	(Unlocks.Watering, 8),
+	(Unlocks.Grass, 6),
+	(Unlocks.Pumpkins, 10),
+	(Unlocks.Cactus, 6),
+	(Unlocks.Mazes, 6),
+	(Unlocks.Megafarm, 5),
+	(Unlocks.Dinosaurs, 4),
+	(Unlocks.Dinosaurs, 5),
+	(Unlocks.Dinosaurs, 6),
+	(Unlocks.Leaderboard, 1),
+	(Unlocks.Carrots, 9),
+	(Unlocks.Trees, 9),
+	(Unlocks.Watering, 9),
+	(Unlocks.Grass, 7),
+	(Unlocks.Carrots, 10),
+	(Unlocks.Trees, 10),
+	(Unlocks.Grass, 8),
+	(Unlocks.Polyculture, 2),
+	(Unlocks.Polyculture, 3),
+	(Unlocks.Polyculture, 4),
+	(Unlocks.Grass, 9),
+	(Unlocks.Grass, 10),
+	(Unlocks.Polyculture, 5),
 ]
 
 POWER_LOW_WATERMARK = 16000
@@ -38,6 +126,7 @@ ITEM_GOALS = {
 	Items.Bone: 100000000,
 	Items.Gold: 100000000,
 }
+LAST_LOGGED_UPGRADE_STEP = None
 
 
 def phase_name(world_mode):
@@ -52,10 +141,6 @@ def phase_name(world_mode):
 	if world_mode == CACTUS_WORLD:
 		return "cactus"
 	return "normal"
-
-
-def next_upgrade_cost(unlock):
-	return get_cost(unlock, num_unlocked(unlock) + 1)
 
 
 def can_afford_cost(cost):
@@ -99,13 +184,31 @@ def add_missing_goal_items(missing_items):
 		missing_items[item] += shortfall
 
 
+def next_upgrade_step():
+	for target_unlock, target_level in UPGRADE_ROUTE:
+		if num_unlocked(target_unlock) < target_level:
+			return target_unlock, target_level
+
+	return None
+
+
+def step_cost(step):
+	if step == None:
+		return None
+
+	target_unlock, target_level = step
+	return get_cost(target_unlock, target_level)
+
+
 def upgrade_missing_items():
 	missing_items = {}
+	step = next_upgrade_step()
 
-	for unlock in TRACKED_UPGRADES:
-		cost = next_upgrade_cost(unlock)
+	if step != None:
+		cost = step_cost(step)
 		if cost != None:
 			add_missing_costs(missing_items, cost)
+		return missing_items
 
 	add_missing_goal_items(missing_items)
 	return missing_items
@@ -113,22 +216,37 @@ def upgrade_missing_items():
 
 def buy_available_upgrades():
 	bought_any = False
-	keep_checking = True
 
-	while keep_checking:
-		keep_checking = False
+	while True:
+		step = next_upgrade_step()
+		cost = step_cost(step)
 
-		for target_unlock in TRACKED_UPGRADES:
-			cost = next_upgrade_cost(target_unlock)
-			if not can_afford_cost(cost):
-				continue
+		if not can_afford_cost(cost):
+			return bought_any
 
-			if unlock(target_unlock):
-				quick_print("upgrade", target_unlock, num_unlocked(target_unlock))
-				bought_any = True
-				keep_checking = True
+		target_unlock, _target_level = step
+		if not unlock(target_unlock):
+			return bought_any
+
+		bought_any = True
 
 	return bought_any
+
+
+def log_next_upgrade_step():
+	global LAST_LOGGED_UPGRADE_STEP
+	step = next_upgrade_step()
+
+	if step == LAST_LOGGED_UPGRADE_STEP:
+		return
+
+	LAST_LOGGED_UPGRADE_STEP = step
+	if step == None:
+		quick_print("next", "items")
+		return
+
+	target_unlock, target_level = step
+	quick_print("next", target_unlock, target_level)
 
 
 def pumpkin_start_carrots():
@@ -230,6 +348,7 @@ def has_lower_tier_goal(missing_items):
 def choose_target_world():
 	missing_items = upgrade_missing_items()
 	missing_pumpkins = missing_item_amount(missing_items, Items.Pumpkin)
+	missing_substance = missing_item_amount(missing_items, Items.Weird_Substance)
 	missing_power = missing_item_amount(missing_items, Items.Power)
 	power = num_items(Items.Power)
 
@@ -242,6 +361,11 @@ def choose_target_world():
 	worlds = top_tier_worlds(missing_items)
 	if len(worlds) > 0:
 		return choose_random_world(worlds)
+
+	if missing_substance > 0:
+		if can_start_pumpkin_phase():
+			return PUMPKIN_WORLD
+		return NORMAL_WORLD
 
 	if missing_pumpkins > 0 and can_start_pumpkin_phase():
 		return PUMPKIN_WORLD
@@ -275,6 +399,7 @@ def enter_phase(world_mode):
 
 def queue_recommended_world():
 	buy_available_upgrades()
+	log_next_upgrade_step()
 	target_world = choose_target_world()
 	previous_world = STATE["world_mode"]
 	enter_phase(target_world)
