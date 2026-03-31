@@ -18,8 +18,8 @@ PHASE_1_QUEUE = [
 ]
 
 PHASE_2_QUEUE = [
-    (Unlocks.Trees, 1),
     (Unlocks.Fertilizer, 1),
+    (Unlocks.Trees, 1),
     (Unlocks.Pumpkins, 1),
 ]
 
@@ -38,6 +38,15 @@ PHASE_5_QUEUE = [
     (Unlocks.Leaderboard, 1),
 ]
 
+PUMPKIN_CARROT_RESERVE_MULTIPLIER = 2
+PUMPKIN_FERTILIZER_BUFFER_MIN = 8
+PUMPKIN_FERTILIZER_BUFFER_DIVISOR = 2
+PUMPKIN_WATER_TRIGGER = 0.5
+PUMPKIN_READY_COUNT = 0
+PUMPKIN_HARVEST_TARGET = None
+PUMPKIN_DEAD_REPAIRS = 0
+FIELD_REPLANT_BUFFER_MULTIPLIER = 1
+
 
 def can_afford_cost(cost):
     if cost == None:
@@ -52,6 +61,28 @@ def can_afford_cost(cost):
 
 def can_afford(target):
     return can_afford_cost(get_cost(target))
+
+
+def can_afford_cost_with_item_reserve(cost, reserve_item, reserve_amount):
+    if cost == None:
+        return False
+
+    reserved = False
+
+    for item in cost:
+        needed = cost[item]
+
+        if item == reserve_item:
+            needed += reserve_amount
+            reserved = True
+
+        if num_items(item) < needed:
+            return False
+
+    if not reserved and num_items(reserve_item) < reserve_amount:
+        return False
+
+    return True
 
 
 def can_afford_entity(entity):
@@ -102,12 +133,85 @@ def can_afford_entity_with_item_reserve(entity, copies, reserve_item, reserve_am
     return True
 
 
+def entity_cost_amount(entity, item):
+    if entity == Entities.Grass:
+        return 0
+
+    cost = get_cost(entity)
+    if cost == None or item not in cost:
+        return 0
+
+    return cost[item]
+
+
+def pumpkin_seed_carrot_cost():
+    return entity_cost_amount(Entities.Pumpkin, Items.Carrot)
+
+
+def pumpkin_seed_fertilizer_cost():
+    return entity_cost_amount(Entities.Pumpkin, Items.Fertilizer)
+
+
+def pumpkin_carrot_reserve_for_size(size):
+    return size * size * pumpkin_seed_carrot_cost() * PUMPKIN_CARROT_RESERVE_MULTIPLIER
+
+
+def pumpkin_carrot_reserve():
+    return pumpkin_carrot_reserve_for_size(get_world_size())
+
+
+def pumpkin_fertilizer_buffer_for_size(size):
+    buffer = size * size // PUMPKIN_FERTILIZER_BUFFER_DIVISOR
+
+    if buffer < PUMPKIN_FERTILIZER_BUFFER_MIN:
+        return PUMPKIN_FERTILIZER_BUFFER_MIN
+
+    return buffer
+
+
+def pumpkin_fertilizer_buffer():
+    return pumpkin_fertilizer_buffer_for_size(get_world_size())
+
+
+def can_support_pumpkin_size(size):
+    carrot_reserve = pumpkin_carrot_reserve_for_size(size)
+
+    if num_items(Items.Carrot) < carrot_reserve:
+        return False
+
+    fertilizer_cost = pumpkin_seed_fertilizer_cost()
+    if fertilizer_cost <= 0:
+        return True
+
+    return num_items(Items.Fertilizer) >= size * size * fertilizer_cost
+
+
+def unlock_item_reserve_amount(target, item):
+    if num_unlocked(Unlocks.Pumpkins) <= 0:
+        return 0
+
+    if item == Items.Carrot and target != Unlocks.Pumpkins:
+        return pumpkin_carrot_reserve()
+
+    return 0
+
+
+def can_afford_unlock(target):
+    cost = get_cost(target)
+    reserve = unlock_item_reserve_amount(target, Items.Carrot)
+
+    if reserve > 0:
+        return can_afford_cost_with_item_reserve(cost, Items.Carrot, reserve)
+
+    return can_afford_cost(cost)
+
+
 def buy_priority(shopping_list):
     for target, target_level in shopping_list:
         if num_unlocked(target) >= target_level:
             continue
 
-        if can_afford(target):
+        if can_afford_unlock(target):
             if unlock(target):
                 quick_print(get_tick_count(), "unlock", target, num_unlocked(target))
                 return True
@@ -115,17 +219,17 @@ def buy_priority(shopping_list):
 
 
 def buy_bootstrap_unlock():
-    if num_unlocked(Unlocks.Speed) <= 0 and can_afford(Unlocks.Speed):
+    if num_unlocked(Unlocks.Speed) <= 0 and can_afford_unlock(Unlocks.Speed):
         if unlock(Unlocks.Speed):
             quick_print(get_tick_count(), "unlock", Unlocks.Speed, num_unlocked(Unlocks.Speed))
             return True
 
-    if num_unlocked(Unlocks.Grass) <= 0 and can_afford(Unlocks.Grass):
+    if num_unlocked(Unlocks.Grass) <= 0 and can_afford_unlock(Unlocks.Grass):
         if unlock(Unlocks.Grass):
             quick_print(get_tick_count(), "unlock", Unlocks.Grass, num_unlocked(Unlocks.Grass))
             return True
 
-    if get_world_size() <= 1 and can_afford(Unlocks.Expand):
+    if get_world_size() <= 1 and can_afford_unlock(Unlocks.Expand):
         if unlock(Unlocks.Expand):
             quick_print(get_tick_count(), "unlock", Unlocks.Expand, num_unlocked(Unlocks.Expand))
             return True
@@ -134,12 +238,12 @@ def buy_bootstrap_unlock():
 
 
 def buy_phase1_unlock():
-    if num_unlocked(Unlocks.Expand) <= 1 and can_afford(Unlocks.Expand):
+    if num_unlocked(Unlocks.Expand) <= 1 and can_afford_unlock(Unlocks.Expand):
         if unlock(Unlocks.Expand):
             quick_print(get_tick_count(), "unlock", Unlocks.Expand, num_unlocked(Unlocks.Expand))
             return True
 
-    if num_unlocked(Unlocks.Speed) <= 1 and can_afford(Unlocks.Speed):
+    if num_unlocked(Unlocks.Speed) <= 1 and can_afford_unlock(Unlocks.Speed):
         if unlock(Unlocks.Speed):
             quick_print(get_tick_count(), "unlock", Unlocks.Speed, num_unlocked(Unlocks.Speed))
             return True
@@ -172,6 +276,37 @@ def missing_entity_cost_item(entity, item):
         return 0
 
     return shortfall
+
+
+def phase_progress_item_reserve(item):
+    reserve = 0
+
+    if num_unlocked(Unlocks.Trees) <= 0:
+        reserve += missing_cost_item(Unlocks.Trees, 1, item)
+
+    if num_unlocked(Unlocks.Pumpkins) <= 0:
+        reserve += missing_cost_item(Unlocks.Pumpkins, 1, item)
+
+    return reserve
+
+
+def can_seed_field_with_reserve(entity, copies):
+    if not can_afford_entity_with_buffer(entity, copies):
+        return False
+
+    hay_cost = entity_cost_amount(entity, Items.Hay)
+    if hay_cost > 0:
+        hay_floor = phase_progress_item_reserve(Items.Hay)
+        if num_items(Items.Hay) < hay_cost * copies + hay_floor:
+            return False
+
+    wood_cost = entity_cost_amount(entity, Items.Wood)
+    if wood_cost > 0:
+        wood_floor = phase_progress_item_reserve(Items.Wood)
+        if num_items(Items.Wood) < wood_cost * copies + wood_floor:
+            return False
+
+    return True
 
 
 def try_plant(entity):
@@ -220,6 +355,94 @@ def set_ground_for(entity):
 
     while get_ground_type() != Grounds.Soil:
         till()
+
+
+def maintain_pumpkin_water():
+    if num_unlocked(Unlocks.Watering) <= 0:
+        return False
+
+    if get_ground_type() != Grounds.Soil:
+        return False
+
+    if get_water() >= PUMPKIN_WATER_TRIGGER:
+        return False
+
+    return use_item(Items.Water)
+
+
+def can_boost_pumpkin():
+    if num_unlocked(Unlocks.Fertilizer) <= 0:
+        return False
+
+    return num_items(Items.Fertilizer) > pumpkin_fertilizer_buffer()
+
+
+def reset_pumpkin_tracking():
+    global PUMPKIN_READY_COUNT
+    global PUMPKIN_HARVEST_TARGET
+    global PUMPKIN_DEAD_REPAIRS
+    PUMPKIN_READY_COUNT = 0
+    PUMPKIN_HARVEST_TARGET = None
+    PUMPKIN_DEAD_REPAIRS = 0
+
+
+def note_ready_pumpkin(x, y):
+    global PUMPKIN_READY_COUNT
+    global PUMPKIN_HARVEST_TARGET
+    PUMPKIN_READY_COUNT += 1
+    PUMPKIN_HARVEST_TARGET = (x, y)
+
+
+def can_replant_pumpkin():
+    if num_unlocked(Unlocks.Pumpkins) <= 0:
+        return False
+
+    return can_afford_entity(Entities.Pumpkin)
+
+
+def plant_pumpkin_tile():
+    if not can_replant_pumpkin():
+        return False
+
+    set_ground_for(Entities.Pumpkin)
+    if get_entity_type() != Entities.Pumpkin:
+        if not plant(Entities.Pumpkin):
+            return False
+
+    maintain_pumpkin_water()
+    return True
+
+
+def maintain_pumpkin_tile():
+    global PUMPKIN_DEAD_REPAIRS
+
+    x = get_pos_x()
+    y = get_pos_y()
+    current = get_entity_type()
+
+    if current == Entities.Pumpkin:
+        if can_harvest():
+            note_ready_pumpkin(x, y)
+            return
+
+        if can_boost_pumpkin():
+            use_item(Items.Fertilizer)
+
+        maintain_pumpkin_water()
+        return
+
+    if current == Entities.Dead_Pumpkin:
+        PUMPKIN_DEAD_REPAIRS += 1
+        plant_pumpkin_tile()
+        return
+
+    if current != None:
+        if can_harvest():
+            harvest()
+        else:
+            return
+
+    plant_pumpkin_tile()
 
 
 def farm_simple(crop, iterations):
@@ -307,17 +530,91 @@ def farm_grid(crop):
 
 def buy_expands_until(target_size):
     while get_world_size() < target_size:
-        if not can_afford(Unlocks.Expand):
+        if not can_afford_unlock(Unlocks.Expand):
             return False
         if not unlock(Unlocks.Expand):
             return False
     return True
 
 
-def choose_simple_crop():
+def buy_expands_until_with_carrot_reserve(target_size, carrot_reserve):
+    while get_world_size() < target_size:
+        if not can_afford_cost_with_item_reserve(get_cost(Unlocks.Expand), Items.Carrot, carrot_reserve):
+            return False
+        if not unlock(Unlocks.Expand):
+            return False
+    return True
+
+
+def pumpkin_ready_to_harvest():
+    return PUMPKIN_READY_COUNT >= get_world_size() * get_world_size() and PUMPKIN_HARVEST_TARGET != None
+
+
+def harvest_mega_pumpkin():
+    if not pumpkin_ready_to_harvest():
+        return False
+
+    x, y = PUMPKIN_HARVEST_TARGET
+    goto(x, y)
+
+    if get_entity_type() != Entities.Pumpkin:
+        return False
+
+    if not can_harvest():
+        return False
+
+    harvest()
+    return True
+
+
+def run_pumpkin_sweep():
+    size = get_world_size()
+    reset_pumpkin_tracking()
+    goto(0, 0)
+
+    for y in range(size):
+        if y % 2 == 0:
+            for x in range(size):
+                maintain_pumpkin_tile()
+                if x < size - 1:
+                    move(East)
+        else:
+            for x in range(size):
+                maintain_pumpkin_tile()
+                if x < size - 1:
+                    move(West)
+
+        if y < size - 1:
+            move(North)
+
+
+def run_pumpkin_economy():
+    if num_items(Items.Carrot) < pumpkin_carrot_reserve():
+        field_size = get_world_size() * get_world_size() * FIELD_REPLANT_BUFFER_MULTIPLIER
+
+        if not can_seed_field_with_reserve(Entities.Carrot, field_size):
+            farm_grid(phase2_resource_crop())
+            return
+
+        farm_grid(Entities.Carrot)
+        return
+
+    run_pumpkin_sweep()
+    harvest_mega_pumpkin()
+
+
+def preferred_wood_crop():
+    if num_unlocked(Unlocks.Trees) > 0:
+        return Entities.Tree
+
     if num_unlocked(Entities.Bush) > 0:
         return Entities.Bush
+
     return Entities.Grass
+
+
+def choose_simple_crop():
+    return preferred_wood_crop()
 
 
 def power_threshold():
@@ -348,21 +645,18 @@ def phase1_resource_crop():
     if num_items(Items.Hay) < num_items(Items.Wood):
         return Entities.Grass
     if num_items(Items.Wood) < num_items(Items.Hay):
-        return Entities.Bush
+        return preferred_wood_crop()
 
     if (get_pos_x() + get_pos_y()) % 2 == 0:
         return Entities.Grass
-    return Entities.Bush
+    return preferred_wood_crop()
 
 
 def phase2_resource_crop():
     if num_items(Items.Hay) < num_items(Items.Wood):
         return Entities.Grass
 
-    if num_unlocked(Entities.Bush) > 0:
-        return Entities.Bush
-
-    return Entities.Grass
+    return preferred_wood_crop()
 
 
 def use_phase1_carrot_lane():
@@ -404,7 +698,7 @@ def choose_midgame_crop():
         return Entities.Tree
     if num_unlocked(Unlocks.Carrots) > 0:
         return Entities.Carrot
-    return Entities.Bush
+    return preferred_wood_crop()
 
 
 def use_phase2_carrot_lane():
@@ -416,7 +710,7 @@ def use_tree_lane():
 
 
 def choose_tree_crop(fallback_crop):
-    if use_tree_lane() and can_afford_entity_with_buffer(Entities.Tree, 2):
+    if use_tree_lane() and can_seed_field_with_reserve(Entities.Tree, 2):
         return Entities.Tree
 
     return fallback_crop
@@ -569,12 +863,31 @@ def phase1_basic_farming():
 def phase2_adaptive_farming():
     buy_expands_until(6)
     buy_priority(PHASE_2_QUEUE)
+
+    if num_unlocked(Unlocks.Pumpkins) > 0:
+        run_pumpkin_economy()
+        return
+
     farm_grid_dynamic(choose_phase2_tile_crop)
 
 
 def phase3_intermediate():
-    buy_expands_until(12)
+    if get_world_size() < 12 and not can_support_pumpkin_size(12):
+        run_pumpkin_economy()
+        return
+
+    if not buy_expands_until_with_carrot_reserve(12, pumpkin_carrot_reserve_for_size(12)):
+        run_pumpkin_economy()
+        return
+
     buy_priority(PHASE_3_QUEUE)
+
+    if (
+        num_unlocked(Unlocks.Cactus) <= 0
+        or num_unlocked(Unlocks.Mazes) <= 0
+    ):
+        run_pumpkin_economy()
+        return
 
     if num_unlocked(Unlocks.Polyculture) > 0:
         farm_with_companions()
@@ -583,7 +896,14 @@ def phase3_intermediate():
 
 
 def phase4_algorithm_crops():
-    buy_expands_until(20)
+    if get_world_size() < 20 and not can_support_pumpkin_size(20):
+        run_pumpkin_economy()
+        return
+
+    if not buy_expands_until_with_carrot_reserve(20, pumpkin_carrot_reserve_for_size(20)):
+        run_pumpkin_economy()
+        return
+
     buy_priority(PHASE_4_QUEUE)
 
     if num_unlocked(Unlocks.Megafarm) > 0:
