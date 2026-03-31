@@ -38,14 +38,13 @@
 
 ## Working Rules For Agents
 
-- Read `main.py` before making strategy changes so you preserve the current farm loop and state model.
 - When adding logic, prefer the game's builtins over inventing abstractions.
 - Keep code robust against missing entities and partially grown crops:
   - check `get_entity_type()` before acting on a tile;
   - use `can_harvest()` before assuming a crop is mature;
   - use `get_ground_type()` before planting soil-only crops.
 - Remember action cost matters. Many world actions take `200` ticks on success, while sensor checks are usually `1` tick and some timing/debug functions are `0` ticks.
-- Use `quick_print(...)` for cheap debug output and `print(...)` only when visible smoke output is actually useful.
+- Never use `quick_print(...)` or `print(...)`
 - Be careful with `till()`: it toggles between `Grounds.Grassland` and `Grounds.Soil`.
 - Remember movement wraps around the world edges.
 - For cactus sorting or other movement-heavy work, measure and compute the target arrangement in memory first, then execute the swap plan; avoid repeated `goto(...)`, re-measuring, or bubble-sorting on the field when a local plan will do.

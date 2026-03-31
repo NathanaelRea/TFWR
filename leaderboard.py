@@ -1,20 +1,16 @@
 from __builtins__ import *
 
-LEADERBOARD_NAME = "sunflower"
-LEADERBOARD_SPEEDUP = 10000
+LEADERBOARDS = {
+    "sunflower": (Leaderboards.Sunflowers, "leader_sunflower"),
+    "reset": (Leaderboards.Fastest_Reset, "leader_reset"),
+}
+LEADERBOARD_SPEEDUP = 32
 
 
-def run_selected_leaderboard():
-	if LEADERBOARD_NAME == "sunflower":
-		quick_print("leaderboard", "start", LEADERBOARD_NAME)
-		leaderboard_run(
-			Leaderboards.Sunflowers,
-			"leader_sunflower",
-			LEADERBOARD_SPEEDUP,
-		)
-		return
+this_run_game, this_run_name = LEADERBOARDS["reset"]
 
-	quick_print("leaderboard", "invalid", LEADERBOARD_NAME)
-
-
-run_selected_leaderboard()
+leaderboard_run(
+    this_run_game,
+    this_run_name,
+    LEADERBOARD_SPEEDUP,
+)
