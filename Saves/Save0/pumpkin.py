@@ -1,5 +1,5 @@
-from __builtins__ import *
-from utils import *
+from Saves.Save0.__builtins__ import *
+from Saves.Save0.utils import *
 
 PUMPKIN_DRONE_START_ROW = 0
 PUMPKIN_DRONE_ROW_STEP = 1

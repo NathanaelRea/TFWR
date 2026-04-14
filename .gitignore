@@ -1,2 +1,10 @@
 __pycache__
-save.json
+**/save.json
+.codex
+
+Backup/
+Themes/
+options.txt
+output.txt
+*.log
+*.vdf

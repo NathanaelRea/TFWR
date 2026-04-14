@@ -1,8 +1,8 @@
-from __builtins__ import *
-import utils
+from Saves.Save0.__builtins__ import *
+import Saves.Save0.utils as utils
 utils.set_entrypoint("leader_sunflower")
-from utils import *
-from sunflower import *
+from Saves.Save0.utils import *
+from Saves.Save0.sunflower import *
 
 
 LEADERBOARD_POWER_TARGET = 100000

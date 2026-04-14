@@ -1,5 +1,5 @@
-from __builtins__ import *
-from utils import *
+from Saves.Save0.__builtins__ import *
+from Saves.Save0.utils import *
 
 MAZE_DRONE_DIRECTION = None
 MAZE_DRONE_TARGET = None

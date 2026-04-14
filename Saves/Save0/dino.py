@@ -1,5 +1,5 @@
-from __builtins__ import *
-from utils import *
+from Saves.Save0.__builtins__ import *
+from Saves.Save0.utils import *
 
 DINO_DIRECTIONS = [North, East, South, West]
 DINO_CYCLE_SIZE = None

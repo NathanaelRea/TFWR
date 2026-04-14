@@ -1,4 +1,4 @@
-from __builtins__ import *
+from Saves.Save0.__builtins__ import *
 
 SUNFLOWER_WORLD = 0
 MAZE_WORLD = 1

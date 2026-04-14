@@ -1,13 +1,13 @@
-from __builtins__ import *
-import utils
+from Saves.Save0.__builtins__ import *
+import Saves.Save0.utils as utils
 utils.set_entrypoint("main")
-from utils import *
-from normal import *
-from sunflower import *
-from maze import *
-from pumpkin import *
-from cactus import *
-from dino import *
+from Saves.Save0.utils import *
+from Saves.Save0.normal import *
+from Saves.Save0.sunflower import *
+from Saves.Save0.maze import *
+from Saves.Save0.pumpkin import *
+from Saves.Save0.cactus import *
+from Saves.Save0.dino import *
 
 
 # Ordered from the reset notes and local docs:

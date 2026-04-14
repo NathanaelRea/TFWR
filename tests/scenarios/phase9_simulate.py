@@ -1,4 +1,4 @@
-from __builtins__ import *
+from Saves.Save0.__builtins__ import *
 
 elapsed = simulate(
 	"phase9_simulate_worker",

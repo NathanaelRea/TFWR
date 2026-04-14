@@ -4,7 +4,7 @@
 # leaderboard run. The real gating is on farm actions and research unlocks, so
 # the phases follow the confirmed unlock dependency layers for the reset route.
 
-from __builtins__ import *
+from Saves.Save0.__builtins__ import *
 
 
 PHASE_0_QUEUE = [
