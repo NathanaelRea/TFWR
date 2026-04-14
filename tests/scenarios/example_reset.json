@@ -1,0 +1,15 @@
+{
+  "name": "example-fastest-reset",
+  "description": "Phase 7 canonical Fastest Reset preset manifest.",
+  "script_path": "../../leader_reset.py",
+  "manifest_version": 1,
+  "mode": "leaderboard",
+  "preset": "fastest-reset",
+  "speedup": 32,
+  "metadata": {
+    "phase": "phase-7"
+  },
+  "notes": [
+    "This fixture resolves the reset preset instead of encoding the whole baseline inline."
+  ]
+}

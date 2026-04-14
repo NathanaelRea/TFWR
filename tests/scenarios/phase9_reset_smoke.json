@@ -1,0 +1,20 @@
+{
+  "name": "phase9-reset-smoke",
+  "description": "Phase 9 reset smoke manifest that exercises the preset baseline through a tiny upgrade milestone.",
+  "script_path": "phase9_reset_smoke.py",
+  "manifest_version": 1,
+  "mode": "leaderboard",
+  "preset": "fastest-reset-smoke",
+  "speedup": 8,
+  "metadata": {
+    "phase": "phase-9",
+    "kind": "reset-smoke"
+  },
+  "assertions": [
+    {
+      "path": "final_state/unlocks/Unlocks.Watering",
+      "expected": 1,
+      "operator": "gte"
+    }
+  ]
+}

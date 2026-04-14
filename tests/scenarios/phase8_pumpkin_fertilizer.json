@@ -1,0 +1,29 @@
+{
+  "name": "phase8-pumpkin-fertilizer",
+  "description": "Single-tile pumpkin growth fixture for Phase 8 parity coverage.",
+  "script_path": "phase8_pumpkin_fertilizer.py",
+  "manifest_version": 1,
+  "mode": "normal",
+  "entrypoint": "run",
+  "strict": true,
+  "world": {
+    "size": 1
+  },
+  "items": {
+    "Items.Carrot": 1,
+    "Items.Fertilizer": 1
+  },
+  "unlocks": {
+    "Unlocks.Plant": 1,
+    "Unlocks.Pumpkins": 1,
+    "Unlocks.Fertilizer": 1
+  },
+  "metadata": {
+    "phase": "phase-8",
+    "capture_kind": "pumpkin-fertilizer"
+  },
+  "notes": [
+    "This fixture focuses on fertilizer timing and final pumpkin harvest.",
+    "The output intentionally records checkpoint stages rather than every incidental action."
+  ]
+}

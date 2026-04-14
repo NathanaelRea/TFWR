@@ -1,0 +1,105 @@
+{
+  "accepted_mismatches": [],
+  "capture": {
+    "normalizer": "tfwr_harness.traces.normalize_output_capture_text",
+    "real_game_capture": null,
+    "script_version": "tests/scenarios/phase8_maze.py@phase-8",
+    "source": "harness-reference",
+    "workflow": "Add quick_print(get_tick_count(), \"checkpoint\", ...) lines in-game, copy output.txt, then normalize the lines into this JSON shape."
+  },
+  "expected": {
+    "checkpoints": [
+      {
+        "category": "output",
+        "name": "quick_print",
+        "payload": {
+          "values": [
+            "401",
+            "checkpoint",
+            "treasure",
+            "1",
+            "1"
+          ]
+        },
+        "seconds": 1.0025,
+        "source": "runtime",
+        "tick": 401
+      },
+      {
+        "category": "output",
+        "name": "quick_print",
+        "payload": {
+          "values": [
+            "801",
+            "checkpoint",
+            "tile",
+            "Entities.Treasure"
+          ]
+        },
+        "seconds": 2.005,
+        "source": "runtime",
+        "tick": 802
+      },
+      {
+        "category": "output",
+        "name": "quick_print",
+        "payload": {
+          "values": [
+            "1002",
+            "checkpoint",
+            "gold",
+            "4.0"
+          ]
+        },
+        "seconds": 2.5075,
+        "source": "runtime",
+        "tick": 1003
+      }
+    ],
+    "elapsed_seconds": 2.5075,
+    "errors": [],
+    "final_state": {
+      "inventory": {
+        "Items.Gold": 4
+      },
+      "tiles": {
+        "0,0": {
+          "entity": null,
+          "flags": [],
+          "ground_type": "Grounds.Grassland",
+          "water": 0
+        },
+        "1,1": {
+          "entity": null,
+          "flags": [],
+          "ground_type": "Grounds.Grassland",
+          "water": 0
+        }
+      },
+      "unlocks": {
+        "Unlocks.Mazes": 1,
+        "Unlocks.Plant": 1
+      },
+      "world": {
+        "current_hat": null,
+        "drone_x": 1,
+        "drone_y": 1,
+        "world_size": 2
+      }
+    },
+    "format_version": 1,
+    "scenario_name": "phase8-maze",
+    "status": "completed",
+    "success": true,
+    "tick_count": 1003
+  },
+  "format_version": 1,
+  "scenario": {
+    "manifest": "tests/scenarios/phase8_maze.json",
+    "mode": "normal",
+    "name": "phase8-maze",
+    "phase": "phase-8",
+    "script_path": "tests/scenarios/phase8_maze.py",
+    "seed": null
+  }
+}

@@ -1,0 +1,23 @@
+{
+  "name": "phase9-simulate",
+  "description": "Phase 9 manifest that exercises simulate(...) from a scenario file.",
+  "script_path": "phase9_simulate.py",
+  "manifest_version": 1,
+  "mode": "normal",
+  "seed": 11,
+  "speedup": 4,
+  "world": {
+    "size": 1
+  },
+  "assertions": [
+    {
+      "path": "final_state/tiles/0/0/entity",
+      "expected": null,
+      "operator": "equals"
+    }
+  ],
+  "metadata": {
+    "phase": "phase-9",
+    "kind": "simulate"
+  }
+}

@@ -1,0 +1,100 @@
+{
+  "accepted_mismatches": [],
+  "capture": {
+    "normalizer": "tfwr_harness.traces.normalize_output_capture_text",
+    "real_game_capture": null,
+    "script_version": "tests/scenarios/phase8_pumpkin_fertilizer.py@phase-8",
+    "source": "harness-reference",
+    "workflow": "Add quick_print(get_tick_count(), \"checkpoint\", ...) lines in-game, copy output.txt, then normalize the lines into this JSON shape."
+  },
+  "expected": {
+    "checkpoints": [
+      {
+        "category": "output",
+        "name": "quick_print",
+        "payload": {
+          "values": [
+            "400",
+            "checkpoint",
+            "planted",
+            "Entities.Pumpkin"
+          ]
+        },
+        "seconds": 1.0025,
+        "source": "runtime",
+        "tick": 401
+      },
+      {
+        "category": "output",
+        "name": "quick_print",
+        "payload": {
+          "values": [
+            "601",
+            "checkpoint",
+            "ready",
+            "True",
+            "0.0"
+          ]
+        },
+        "seconds": 1.5075,
+        "source": "runtime",
+        "tick": 603
+      },
+      {
+        "category": "output",
+        "name": "quick_print",
+        "payload": {
+          "values": [
+            "803",
+            "checkpoint",
+            "harvested",
+            "1.0"
+          ]
+        },
+        "seconds": 2.01,
+        "source": "runtime",
+        "tick": 804
+      }
+    ],
+    "elapsed_seconds": 2.01,
+    "errors": [],
+    "final_state": {
+      "inventory": {
+        "Items.Pumpkin": 1
+      },
+      "tiles": {
+        "0,0": {
+          "entity": null,
+          "flags": [],
+          "ground_type": "Grounds.Soil",
+          "water": 0
+        }
+      },
+      "unlocks": {
+        "Unlocks.Fertilizer": 1,
+        "Unlocks.Plant": 1,
+        "Unlocks.Pumpkins": 1
+      },
+      "world": {
+        "current_hat": null,
+        "drone_x": 0,
+        "drone_y": 0,
+        "world_size": 1
+      }
+    },
+    "format_version": 1,
+    "scenario_name": "phase8-pumpkin-fertilizer",
+    "status": "completed",
+    "success": true,
+    "tick_count": 804
+  },
+  "format_version": 1,
+  "scenario": {
+    "manifest": "tests/scenarios/phase8_pumpkin_fertilizer.json",
+    "mode": "normal",
+    "name": "phase8-pumpkin-fertilizer",
+    "phase": "phase-8",
+    "script_path": "tests/scenarios/phase8_pumpkin_fertilizer.py",
+    "seed": null
+  }
+}

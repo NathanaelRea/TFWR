@@ -1,0 +1,120 @@
+{
+  "accepted_mismatches": [],
+  "capture": {
+    "normalizer": "tfwr_harness.traces.normalize_output_capture_text",
+    "real_game_capture": null,
+    "script_version": "tests/scenarios/phase8_reset_bootstrap.py@phase-8",
+    "source": "harness-reference",
+    "workflow": "Add quick_print(get_tick_count(), \"checkpoint\", ...) lines in-game, copy output.txt, then normalize the lines into this JSON shape."
+  },
+  "expected": {
+    "checkpoints": [
+      {
+        "category": "output",
+        "name": "quick_print",
+        "payload": {
+          "values": [
+            "202",
+            "checkpoint",
+            "speed",
+            "1",
+            "180.0"
+          ]
+        },
+        "seconds": 0.336667,
+        "source": "runtime",
+        "tick": 202
+      },
+      {
+        "category": "output",
+        "name": "quick_print",
+        "payload": {
+          "values": [
+            "404",
+            "checkpoint",
+            "grass",
+            "1",
+            "80.0"
+          ]
+        },
+        "seconds": 0.673333,
+        "source": "runtime",
+        "tick": 404
+      },
+      {
+        "category": "output",
+        "name": "quick_print",
+        "payload": {
+          "values": [
+            "606",
+            "checkpoint",
+            "expand",
+            "2",
+            "100.0"
+          ]
+        },
+        "seconds": 1.01,
+        "source": "runtime",
+        "tick": 606
+      },
+      {
+        "category": "output",
+        "name": "quick_print",
+        "payload": {
+          "values": [
+            "1008",
+            "checkpoint",
+            "carrots",
+            "1",
+            "50.0"
+          ]
+        },
+        "seconds": 1.68,
+        "source": "runtime",
+        "tick": 1008
+      }
+    ],
+    "elapsed_seconds": 1.68,
+    "errors": [],
+    "final_state": {
+      "inventory": {
+        "Items.Wood": 50
+      },
+      "tiles": {
+        "0,0": {
+          "entity": null,
+          "flags": [],
+          "ground_type": "Grounds.Grassland",
+          "water": 0
+        }
+      },
+      "unlocks": {
+        "Unlocks.Carrots": 1,
+        "Unlocks.Expand": 1,
+        "Unlocks.Grass": 1,
+        "Unlocks.Plant": 1,
+        "Unlocks.Speed": 1
+      },
+      "world": {
+        "current_hat": null,
+        "drone_x": 0,
+        "drone_y": 0,
+        "world_size": 2
+      }
+    },
+    "format_version": 1,
+    "scenario_name": "phase8-reset-bootstrap",
+    "status": "completed",
+    "success": true,
+    "tick_count": 1008
+  },
+  "format_version": 1,
+  "scenario": {
+    "manifest": "tests/scenarios/phase8_reset_bootstrap.json",
+    "mode": "leaderboard",
+    "name": "phase8-reset-bootstrap",
+    "phase": "phase-8",
+    "script_path": "tests/scenarios/phase8_reset_bootstrap.py",
+    "seed": 0
+  }
+}

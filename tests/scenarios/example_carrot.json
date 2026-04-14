@@ -1,0 +1,48 @@
+{
+  "name": "example-carrot-entrypoint",
+  "description": "Focused non-reset scenario that proves entrypoint, globals, and assertions work on a tiny crop flow.",
+  "script_path": "example_carrot.py",
+  "manifest_version": 1,
+  "mode": "normal",
+  "entrypoint": "run",
+  "seed": 17,
+  "speedup": 8,
+  "strict": true,
+  "globals": {
+    "START_VALUE": 4
+  },
+  "world": {
+    "size": 1
+  },
+  "items": {
+    "Items.Hay": 1,
+    "Items.Wood": 1
+  },
+  "unlocks": {
+    "Unlocks.Plant": 1,
+    "Unlocks.Carrots": 1
+  },
+  "board": [
+    [
+      {
+        "ground_type": "Grounds.Grassland"
+      }
+    ]
+  ],
+  "assertions": [
+    {
+      "path": "return_value",
+      "expected": 5,
+      "operator": "equals"
+    },
+    {
+      "path": "final_state/tiles/0/0/entity/entity_type",
+      "expected": "Entities.Carrot",
+      "operator": "equals"
+    }
+  ],
+  "metadata": {
+    "phase": "phase-7",
+    "kind": "generic"
+  }
+}

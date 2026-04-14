@@ -1,0 +1,27 @@
+{
+  "name": "phase8-maze",
+  "description": "Fresh-maze parity fixture for Phase 8.",
+  "script_path": "phase8_maze.py",
+  "manifest_version": 1,
+  "mode": "normal",
+  "entrypoint": "run",
+  "strict": true,
+  "world": {
+    "size": 2
+  },
+  "items": {
+    "Items.Weird_Substance": 2
+  },
+  "unlocks": {
+    "Unlocks.Plant": 1,
+    "Unlocks.Mazes": 1
+  },
+  "metadata": {
+    "phase": "phase-8",
+    "capture_kind": "maze"
+  },
+  "notes": [
+    "This fixture covers the maze branch of the Phase 8 requirement without depending on deferred dinosaur mechanics.",
+    "The harvest checkpoint records only the treasure path and resulting gold payout."
+  ]
+}

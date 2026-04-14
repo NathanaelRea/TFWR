@@ -1,0 +1,21 @@
+{
+  "name": "phase8-reset-bootstrap",
+  "description": "Deterministic reset-bootstrap parity fixture for Phase 8.",
+  "script_path": "phase8_reset_bootstrap.py",
+  "manifest_version": 1,
+  "preset": "fastest-reset",
+  "entrypoint": "run",
+  "items": {
+    "Items.Hay": 200,
+    "Items.Wood": 100
+  },
+  "assertions": [],
+  "metadata": {
+    "phase": "phase-8",
+    "capture_kind": "reset-bootstrap"
+  },
+  "notes": [
+    "This fixture exercises the early reset unlock ladder with explicit checkpoint output.",
+    "Each quick_print line includes the in-script tick first so captured game output can be normalized later."
+  ]
+}
